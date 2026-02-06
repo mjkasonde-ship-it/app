@@ -812,8 +812,8 @@ async def get_ticket(ticket_id: str):
     return {"ticket": ticket, "messages": messages}
 
 @api_router.post("/tickets/{ticket_id}/messages")
-async def add_ticket_message(ticket_id: str, sender_id: str, sender_name: str, message: str, is_internal: bool = False):
-    msg = TicketMessage(ticket_id=ticket_id, sender_id=sender_id, sender_name=sender_name, message=message, is_internal=is_internal)
+async def add_ticket_message(ticket_id: str, msg_data: TicketMessageCreate):
+    msg = TicketMessage(ticket_id=ticket_id, sender_id=msg_data.sender_id, sender_name=msg_data.sender_name, message=msg_data.message, is_internal=msg_data.is_internal)
     doc = msg.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
     await db.ticket_messages.insert_one(doc)
