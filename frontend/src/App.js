@@ -68,7 +68,7 @@ const DEMO_SLIDES = [
 const DemoModal = ({ isOpen, onClose, onGetStarted }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const prevIsOpen = React.useRef(isOpen);
+  const prevIsOpen = useRef(isOpen);
 
   // Reset slide when modal opens (not closes)
   if (isOpen && !prevIsOpen.current) {
