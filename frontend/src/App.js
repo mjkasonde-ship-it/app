@@ -331,7 +331,12 @@ const LandingPage = () => {
                 >
                   Start Free Trial
                 </button>
-                <button className="border-2 border-slate-300 text-slate-700 px-8 py-3.5 rounded-xl font-semibold hover:border-slate-400 hover:bg-slate-50 transition-all">
+                <button 
+                  onClick={() => setShowDemoModal(true)}
+                  className="flex items-center gap-2 border-2 border-slate-300 text-slate-700 px-8 py-3.5 rounded-xl font-semibold hover:border-slate-400 hover:bg-slate-50 transition-all"
+                  data-testid="watch-demo-btn"
+                >
+                  <Play className="w-5 h-5" />
                   Watch Demo
                 </button>
               </div>
