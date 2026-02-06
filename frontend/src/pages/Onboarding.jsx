@@ -140,7 +140,7 @@ export default function Onboarding() {
             <img 
               src="https://customer-assets.emergentagent.com/job_lusaka-legal-tech/artifacts/xxn68wwl_Cove%20Premium%20Logo.png" 
               alt="Cove" 
-              className="h-12 brightness-200 mb-12"
+              className="h-14 brightness-200 mb-12"
               data-testid="onboarding-logo"
             />
             <h1 className="font-heading text-4xl font-bold text-white mb-6">
@@ -175,7 +175,7 @@ export default function Onboarding() {
           <img 
             src="https://customer-assets.emergentagent.com/job_lusaka-legal-tech/artifacts/xxn68wwl_Cove%20Premium%20Logo.png" 
             alt="Cove" 
-            className="h-10"
+            className="h-12"
           />
         </div>
 

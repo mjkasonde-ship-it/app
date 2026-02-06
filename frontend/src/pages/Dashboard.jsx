@@ -162,7 +162,7 @@ export default function Dashboard() {
               <img 
                 src="https://customer-assets.emergentagent.com/job_lusaka-legal-tech/artifacts/xxn68wwl_Cove%20Premium%20Logo.png" 
                 alt="Cove" 
-                className="h-8 cursor-pointer"
+                className="h-10 cursor-pointer"
                 onClick={() => navigate('/')}
                 data-testid="dashboard-logo"
               />
@@ -216,7 +216,7 @@ export default function Dashboard() {
               <img 
                 src="https://customer-assets.emergentagent.com/job_lusaka-legal-tech/artifacts/xxn68wwl_Cove%20Premium%20Logo.png" 
                 alt="Cove" 
-                className="h-8"
+                className="h-10"
               />
             </SheetTitle>
           </SheetHeader>

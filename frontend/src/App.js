@@ -279,7 +279,7 @@ const LandingPage = () => {
             <img 
               src="https://customer-assets.emergentagent.com/job_lusaka-legal-tech/artifacts/xxn68wwl_Cove%20Premium%20Logo.png" 
               alt="Cove" 
-              className="h-10"
+              className="h-14"
               data-testid="cove-logo"
             />
           </div>
@@ -479,7 +479,7 @@ const LandingPage = () => {
             <img 
               src="https://customer-assets.emergentagent.com/job_lusaka-legal-tech/artifacts/xxn68wwl_Cove%20Premium%20Logo.png" 
               alt="Cove" 
-              className="h-8 brightness-200"
+              className="h-10 brightness-200"
             />
             <p className="text-slate-400 text-sm">
               2026 Cove Legal Tech. Built for Zambian businesses.

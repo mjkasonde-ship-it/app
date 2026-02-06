@@ -665,7 +665,7 @@ export default function AdminConsole() {
           <img 
             src="https://customer-assets.emergentagent.com/job_lusaka-legal-tech/artifacts/xxn68wwl_Cove%20Premium%20Logo.png" 
             alt="Cove" 
-            className="h-10 brightness-200 cursor-pointer"
+            className="h-12 brightness-200 cursor-pointer"
             onClick={() => navigate('/')}
             data-testid="admin-logo"
           />
