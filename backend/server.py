@@ -908,8 +908,8 @@ async def get_subscription_plans():
     return plans
 
 @api_router.post("/subscription-plans")
-async def create_subscription_plan(name: str, price: float, features: List[str], user_limit: int, storage_limit_gb: int):
-    plan = SubscriptionPlan(name=name, price=price, features=features, user_limit=user_limit, storage_limit_gb=storage_limit_gb)
+async def create_subscription_plan(plan_data: SubscriptionPlanCreate):
+    plan = SubscriptionPlan(name=plan_data.name, price=plan_data.price, features=plan_data.features, user_limit=plan_data.user_limit, storage_limit_gb=plan_data.storage_limit_gb)
     doc = plan.model_dump()
     await db.subscription_plans.insert_one(doc)
     return plan
