@@ -693,7 +693,7 @@ export default function Dashboard() {
                         tick={{ fill: '#94a3b8', fontSize: 12 }}
                         domain={[0, 100]}
                       />
-                      <Tooltip content={<CustomTooltip />} />
+                      <Tooltip content={<TrendTooltip />} cursor={{ stroke: '#64748b', strokeWidth: 1, strokeDasharray: '4 4' }} />
                       <Area 
                         type="monotone" 
                         dataKey="score" 
