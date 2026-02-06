@@ -72,17 +72,158 @@ const SEVERITY_COLORS = {
   low: "#10b981"
 };
 
-// Custom tooltip for charts
-const CustomTooltip = ({ active, payload, label }) => {
+const SEVERITY_INSIGHTS = {
+  Critical: "Requires immediate attention - potential legal/financial penalties",
+  High: "Address within 7 days to avoid compliance risks",
+  Medium: "Schedule for completion within 30 days",
+  Low: "Can be addressed during regular review cycles"
+};
+
+// Enhanced Trend Chart Tooltip with insights
+const TrendTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
+    const scoreData = payload.find(p => p.dataKey === 'score');
+    const completedData = payload.find(p => p.dataKey === 'completed');
+    const score = scoreData?.value || 0;
+    const completed = completedData?.value || 0;
+    
+    let insight = "";
+    let insightColor = "text-slate-400";
+    if (score >= 80) {
+      insight = "Excellent compliance posture";
+      insightColor = "text-emerald-400";
+    } else if (score >= 60) {
+      insight = "Good progress, continue momentum";
+      insightColor = "text-blue-400";
+    } else if (score >= 40) {
+      insight = "Needs attention - prioritize critical items";
+      insightColor = "text-amber-400";
+    } else {
+      insight = "Urgent action required";
+      insightColor = "text-red-400";
+    }
+    
     return (
-      <div className="bg-slate-900 text-white px-3 py-2 rounded-lg text-sm shadow-xl">
-        <p className="font-medium">{label}</p>
-        {payload.map((entry, index) => (
-          <p key={index} style={{ color: entry.color || '#fff' }}>
-            {entry.name}: {entry.value}
-          </p>
-        ))}
+      <div className="bg-slate-900/95 backdrop-blur-sm text-white px-4 py-3 rounded-xl text-sm shadow-2xl border border-slate-700/50 min-w-[200px]">
+        <p className="font-semibold text-base border-b border-slate-700 pb-2 mb-2">{label} 2025</p>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              Compliance Score
+            </span>
+            <span className="font-bold text-emerald-400">{score}%</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+              Tasks Completed
+            </span>
+            <span className="font-bold text-blue-400">{completed}</span>
+          </div>
+        </div>
+        <div className={`mt-3 pt-2 border-t border-slate-700 ${insightColor} text-xs`}>
+          <span className="opacity-70">Insight:</span> {insight}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+// Enhanced Severity Pie Chart Tooltip
+const SeverityTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    const name = data.name;
+    const value = data.value;
+    const total = data.payload?.total || 24;
+    const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+    const insight = SEVERITY_INSIGHTS[name] || "";
+    
+    const colorMap = {
+      Critical: "text-red-400",
+      High: "text-amber-400",
+      Medium: "text-blue-400",
+      Low: "text-emerald-400"
+    };
+    
+    return (
+      <div className="bg-slate-900/95 backdrop-blur-sm text-white px-4 py-3 rounded-xl text-sm shadow-2xl border border-slate-700/50 min-w-[220px]">
+        <div className="flex items-center gap-2 border-b border-slate-700 pb-2 mb-2">
+          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: data.payload?.fill }}></span>
+          <span className="font-semibold text-base">{name} Priority</span>
+        </div>
+        <div className="space-y-1">
+          <div className="flex justify-between">
+            <span className="text-slate-400">Obligations</span>
+            <span className={`font-bold ${colorMap[name]}`}>{value} items</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400">Portfolio Share</span>
+            <span className="font-medium">{percentage}%</span>
+          </div>
+        </div>
+        <div className="mt-3 pt-2 border-t border-slate-700 text-xs text-slate-400">
+          <span className="opacity-70">Action:</span> {insight}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+// Enhanced Category Bar Chart Tooltip
+const CategoryTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    const completed = payload.find(p => p.dataKey === 'completed')?.value || 0;
+    const total = payload.find(p => p.dataKey === 'value')?.value || 0;
+    const remaining = total;
+    const allTotal = completed + remaining;
+    const progress = allTotal > 0 ? Math.round((completed / allTotal) * 100) : 0;
+    
+    let statusText = "";
+    let statusColor = "";
+    if (progress >= 80) {
+      statusText = "On track";
+      statusColor = "text-emerald-400";
+    } else if (progress >= 50) {
+      statusText = "In progress";
+      statusColor = "text-blue-400";
+    } else if (progress >= 25) {
+      statusText = "Needs focus";
+      statusColor = "text-amber-400";
+    } else {
+      statusText = "Behind schedule";
+      statusColor = "text-red-400";
+    }
+    
+    return (
+      <div className="bg-slate-900/95 backdrop-blur-sm text-white px-4 py-3 rounded-xl text-sm shadow-2xl border border-slate-700/50 min-w-[200px]">
+        <p className="font-semibold text-base border-b border-slate-700 pb-2 mb-2">{label}</p>
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              Completed
+            </span>
+            <span className="font-bold text-emerald-400">{completed}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+              Remaining
+            </span>
+            <span className="font-medium text-slate-300">{remaining}</span>
+          </div>
+          <div className="flex justify-between pt-1 border-t border-slate-700">
+            <span className="text-slate-400">Progress</span>
+            <span className="font-bold">{progress}%</span>
+          </div>
+        </div>
+        <div className={`mt-2 text-xs ${statusColor}`}>
+          Status: {statusText}
+        </div>
       </div>
     );
   }
