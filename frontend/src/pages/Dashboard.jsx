@@ -13,20 +13,41 @@ import {
   CheckCircle2,
   Clock,
   TrendingUp,
+  TrendingDown,
   Bell,
   Building2,
   Scale,
   Briefcase,
   Leaf,
-  LogOut,
   Menu,
-  X
+  ArrowUpRight,
+  Shield,
+  Target,
+  Activity
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { Progress } from "../components/ui/progress";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "../components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../components/ui/sheet";
+import { 
+  PieChart, 
+  Pie, 
+  Cell, 
+  ResponsiveContainer, 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  BarChart, 
+  Bar,
+  Area,
+  AreaChart,
+  RadialBarChart,
+  RadialBar,
+  Legend
+} from "recharts";
 
 const API = process.env.REACT_APP_BACKEND_URL + "/api";
 
@@ -38,10 +59,34 @@ const CATEGORY_ICONS = {
 };
 
 const CATEGORY_COLORS = {
-  "Corporate": "bg-cobalt-100 text-cobalt-700 border-cobalt-200",
-  "Core Operations": "bg-amber-100 text-amber-700 border-amber-200",
-  "Business Operations": "bg-purple-100 text-purple-700 border-purple-200",
-  "Environment": "bg-emerald-100 text-emerald-700 border-emerald-200"
+  "Corporate": { bg: "bg-blue-50", text: "text-blue-700", accent: "#3b82f6", ring: "ring-blue-200" },
+  "Core Operations": { bg: "bg-amber-50", text: "text-amber-700", accent: "#f59e0b", ring: "ring-amber-200" },
+  "Business Operations": { bg: "bg-violet-50", text: "text-violet-700", accent: "#8b5cf6", ring: "ring-violet-200" },
+  "Environment": { bg: "bg-emerald-50", text: "text-emerald-700", accent: "#10b981", ring: "ring-emerald-200" }
+};
+
+const SEVERITY_COLORS = {
+  critical: "#ef4444",
+  high: "#f59e0b", 
+  medium: "#3b82f6",
+  low: "#10b981"
+};
+
+// Custom tooltip for charts
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-slate-900 text-white px-3 py-2 rounded-lg text-sm shadow-xl">
+        <p className="font-medium">{label}</p>
+        {payload.map((entry, index) => (
+          <p key={index} style={{ color: entry.color || '#fff' }}>
+            {entry.name}: {entry.value}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
 };
 
 export default function Dashboard() {
@@ -49,14 +94,12 @@ export default function Dashboard() {
   const { companyId } = useParams();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (companyId) {
       fetchDashboardData();
     } else {
-      // Demo mode - fetch first company or use mock data
       fetchDemoData();
     }
   }, [companyId]);
@@ -68,7 +111,6 @@ export default function Dashboard() {
     } catch (error) {
       console.error("Error fetching dashboard:", error);
       toast.error("Failed to load dashboard data");
-      // Use mock data on error
       setStats(getMockStats());
     } finally {
       setLoading(false);
@@ -86,7 +128,6 @@ export default function Dashboard() {
     } catch (error) {
       console.error("Error fetching companies:", error);
     }
-    // Use mock data
     setStats(getMockStats());
     setLoading(false);
   };
@@ -94,28 +135,47 @@ export default function Dashboard() {
   const getMockStats = () => ({
     company: { name: "Demo Mining Corp", sector: "mining", sub_sector: "Base Metals" },
     compliance_score: 75,
-    total_obligations: 12,
-    completed_obligations: 3,
-    critical_items: 2,
-    high_priority_items: 4,
+    previous_score: 68,
+    total_obligations: 24,
+    completed_obligations: 9,
+    critical_items: 3,
+    high_priority_items: 6,
+    pending_items: 12,
+    overdue_items: 2,
     upcoming_deadlines: [
       { id: "1", obligation: "Annual Mining License Renewal", due_date: "2026-03-31", severity: "high", statute: "Mines and Minerals Development Act" },
       { id: "2", obligation: "Environmental Impact Assessment", due_date: "2026-06-30", severity: "critical", statute: "Environmental Management Act" },
       { id: "3", obligation: "Submit Annual Employment Returns", due_date: "2026-02-28", severity: "medium", statute: "Employment Act" },
+      { id: "4", obligation: "Quarterly Production Returns", due_date: "2026-04-15", severity: "high", statute: "Mines and Minerals Development Act" },
+      { id: "5", obligation: "Mine Safety Certificate", due_date: "2026-02-28", severity: "critical", statute: "Mines and Minerals Development Act" },
     ],
     categories: {
-      "Corporate": { total: 3, completed: 1 },
-      "Core Operations": { total: 4, completed: 1 },
-      "Business Operations": { total: 3, completed: 1 },
-      "Environment": { total: 2, completed: 0 }
-    }
+      "Corporate": { total: 6, completed: 3, critical: 1, high: 2, medium: 2, low: 1 },
+      "Core Operations": { total: 8, completed: 2, critical: 2, high: 3, medium: 2, low: 1 },
+      "Business Operations": { total: 6, completed: 3, critical: 0, high: 1, medium: 3, low: 2 },
+      "Environment": { total: 4, completed: 1, critical: 0, high: 2, medium: 1, low: 1 }
+    },
+    trend_data: [
+      { month: "Jul", score: 58, completed: 4 },
+      { month: "Aug", score: 62, completed: 5 },
+      { month: "Sep", score: 65, completed: 6 },
+      { month: "Oct", score: 68, completed: 7 },
+      { month: "Nov", score: 72, completed: 8 },
+      { month: "Dec", score: 75, completed: 9 }
+    ],
+    severity_breakdown: [
+      { name: "Critical", value: 3, fill: SEVERITY_COLORS.critical },
+      { name: "High", value: 6, fill: SEVERITY_COLORS.high },
+      { name: "Medium", value: 8, fill: SEVERITY_COLORS.medium },
+      { name: "Low", value: 7, fill: SEVERITY_COLORS.low }
+    ]
   });
 
   const getSeverityBadge = (severity) => {
     const styles = {
       critical: "bg-red-100 text-red-800 border-red-200",
-      high: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      medium: "bg-orange-100 text-orange-800 border-orange-200",
+      high: "bg-amber-100 text-amber-800 border-amber-200",
+      medium: "bg-blue-100 text-blue-800 border-blue-200",
       low: "bg-emerald-100 text-emerald-800 border-emerald-200"
     };
     return styles[severity] || styles.medium;
@@ -123,7 +183,7 @@ export default function Dashboard() {
 
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   };
 
   const getDaysUntil = (dateStr) => {
@@ -133,6 +193,24 @@ export default function Dashboard() {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
+
+  const getScoreChange = () => {
+    if (!stats) return 0;
+    return stats.compliance_score - (stats.previous_score || 0);
+  };
+
+  // Prepare pie chart data for categories
+  const categoryPieData = stats ? Object.entries(stats.categories).map(([name, data]) => ({
+    name,
+    value: data.total,
+    completed: data.completed,
+    fill: CATEGORY_COLORS[name]?.accent || "#64748b"
+  })) : [];
+
+  // Radial chart data for compliance score
+  const complianceRadialData = stats ? [
+    { name: 'Score', value: stats.compliance_score, fill: '#10b981' }
+  ] : [];
 
   if (loading) {
     return (
@@ -146,14 +224,14 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100">
       {/* Top Navigation */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-40">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
               <button 
-                className="lg:hidden p-2 rounded-lg hover:bg-slate-100"
+                className="lg:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors"
                 onClick={() => setMobileMenuOpen(true)}
                 data-testid="mobile-menu-btn"
               >
@@ -162,14 +240,14 @@ export default function Dashboard() {
               <img 
                 src="https://customer-assets.emergentagent.com/job_lusaka-legal-tech/artifacts/xxn68wwl_Cove%20Premium%20Logo.png" 
                 alt="Cove" 
-                className="h-16 cursor-pointer"
+                className="h-14 cursor-pointer"
                 onClick={() => navigate('/')}
                 data-testid="dashboard-logo"
               />
             </div>
             
             <nav className="hidden lg:flex items-center gap-1">
-              <Button variant="ghost" className="gap-2" data-testid="nav-dashboard">
+              <Button variant="ghost" className="gap-2 text-emerald-700 bg-emerald-50" data-testid="nav-dashboard">
                 <LayoutDashboard className="w-4 h-4" />
                 Dashboard
               </Button>
@@ -188,12 +266,14 @@ export default function Dashboard() {
               </Button>
             </nav>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" className="relative" data-testid="notifications-btn">
                 <Bell className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center">
-                  {stats?.critical_items || 0}
-                </span>
+                {(stats?.critical_items || 0) > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center font-medium">
+                    {stats?.critical_items}
+                  </span>
+                )}
               </Button>
               <Button 
                 variant="ghost" 
@@ -216,7 +296,7 @@ export default function Dashboard() {
               <img 
                 src="https://customer-assets.emergentagent.com/job_lusaka-legal-tech/artifacts/xxn68wwl_Cove%20Premium%20Logo.png" 
                 alt="Cove" 
-                className="h-16"
+                className="h-14"
               />
             </SheetTitle>
           </SheetHeader>
@@ -246,179 +326,424 @@ export default function Dashboard() {
       </Sheet>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="font-heading text-3xl font-bold text-slate-900 mb-2" data-testid="welcome-title">
-            Welcome back, {stats?.company?.name || 'User'}
-          </h1>
-          <p className="text-slate-600">
-            Here&apos;s your compliance overview for {stats?.company?.sector} - {stats?.company?.sub_sector}
-          </p>
-        </div>
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Header */}
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight" data-testid="welcome-title">
+                {stats?.company?.name || 'Dashboard'}
+              </h1>
+              <p className="text-slate-500 mt-1 flex items-center gap-2">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 capitalize">
+                  {stats?.company?.sector}
+                </span>
+                <span className="text-slate-300">|</span>
+                <span className="text-sm">{stats?.company?.sub_sector}</span>
+              </p>
+            </div>
+            <Button 
+              onClick={() => navigate(`/compliance/${companyId || ''}`)}
+              className="bg-slate-900 hover:bg-slate-800 text-white gap-2 shadow-lg shadow-slate-900/10"
+              data-testid="view-matrix-btn"
+            >
+              View Full Matrix
+              <ArrowUpRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </motion.div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Hero Metrics Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+          {/* Compliance Score Card - Large */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
+            className="lg:col-span-4"
           >
-            <Card className="border-t-4 border-t-emerald-600 hover:shadow-lg transition-shadow" data-testid="compliance-score-card">
-              <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4" />
-                  Compliance Score
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-end gap-2">
-                  <span className="text-4xl font-bold text-slate-900">{stats?.compliance_score || 0}%</span>
+            <Card className="h-full bg-gradient-to-br from-emerald-600 to-emerald-700 text-white border-0 shadow-xl shadow-emerald-600/20 overflow-hidden relative" data-testid="compliance-score-card">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+              <CardContent className="p-6 relative">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <p className="text-emerald-100 text-sm font-medium mb-1">Compliance Score</p>
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-5xl font-bold">{stats?.compliance_score || 0}%</span>
+                      <span className={`flex items-center gap-1 text-sm font-medium px-2 py-0.5 rounded-full ${
+                        getScoreChange() >= 0 ? 'bg-emerald-500/30 text-emerald-100' : 'bg-red-500/30 text-red-100'
+                      }`}>
+                        {getScoreChange() >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                        {Math.abs(getScoreChange())}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="w-20 h-20">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadialBarChart 
+                        cx="50%" 
+                        cy="50%" 
+                        innerRadius="70%" 
+                        outerRadius="100%" 
+                        data={complianceRadialData}
+                        startAngle={90}
+                        endAngle={-270}
+                      >
+                        <RadialBar
+                          background={{ fill: 'rgba(255,255,255,0.2)' }}
+                          dataKey="value"
+                          cornerRadius={10}
+                        />
+                      </RadialBarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
-                <Progress value={stats?.compliance_score || 0} className="mt-3 h-2" />
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-emerald-500/30">
+                  <div>
+                    <p className="text-emerald-200 text-xs">Completed</p>
+                    <p className="text-xl font-semibold">{stats?.completed_obligations || 0}/{stats?.total_obligations || 0}</p>
+                  </div>
+                  <div>
+                    <p className="text-emerald-200 text-xs">This Month</p>
+                    <p className="text-xl font-semibold">+{getScoreChange()}%</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </motion.div>
 
+          {/* Quick Stats Grid */}
+          <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+            >
+              <Card className="h-full border-slate-200/60 hover:shadow-md transition-all hover:border-slate-300" data-testid="total-obligations-card">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2 rounded-lg bg-slate-100">
+                      <Target className="w-4 h-4 text-slate-600" />
+                    </div>
+                    <span className="text-xs text-slate-400 font-medium">TOTAL</span>
+                  </div>
+                  <p className="text-3xl font-bold text-slate-900">{stats?.total_obligations || 0}</p>
+                  <p className="text-sm text-slate-500 mt-1">Obligations</p>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card className="h-full border-red-100 bg-red-50/50 hover:shadow-md transition-all" data-testid="critical-items-card">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2 rounded-lg bg-red-100">
+                      <AlertTriangle className="w-4 h-4 text-red-600" />
+                    </div>
+                    <span className="text-xs text-red-400 font-medium">URGENT</span>
+                  </div>
+                  <p className="text-3xl font-bold text-red-600">{stats?.critical_items || 0}</p>
+                  <p className="text-sm text-red-600/70 mt-1">Critical</p>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+            >
+              <Card className="h-full border-amber-100 bg-amber-50/50 hover:shadow-md transition-all" data-testid="high-priority-card">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2 rounded-lg bg-amber-100">
+                      <Clock className="w-4 h-4 text-amber-600" />
+                    </div>
+                    <span className="text-xs text-amber-400 font-medium">PRIORITY</span>
+                  </div>
+                  <p className="text-3xl font-bold text-amber-600">{stats?.high_priority_items || 0}</p>
+                  <p className="text-sm text-amber-600/70 mt-1">High Priority</p>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Card className="h-full border-emerald-100 bg-emerald-50/50 hover:shadow-md transition-all" data-testid="completed-card">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2 rounded-lg bg-emerald-100">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <span className="text-xs text-emerald-400 font-medium">DONE</span>
+                  </div>
+                  <p className="text-3xl font-bold text-emerald-600">{stats?.completed_obligations || 0}</p>
+                  <p className="text-sm text-emerald-600/70 mt-1">Completed</p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Analytics Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+          {/* Compliance Trend Chart */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.35 }}
+            className="lg:col-span-8"
           >
-            <Card className="border-t-4 border-t-slate-600 hover:shadow-lg transition-shadow" data-testid="total-obligations-card">
+            <Card className="border-slate-200/60" data-testid="trend-chart-card">
               <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  Total Obligations
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg font-semibold">Compliance Trend</CardTitle>
+                    <CardDescription>6-month performance overview</CardDescription>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                      Score
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                      Completed
+                    </span>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-end gap-2">
-                  <span className="text-4xl font-bold text-slate-900">{stats?.total_obligations || 0}</span>
-                  <span className="text-sm text-slate-500 mb-1">
-                    {stats?.completed_obligations || 0} completed
-                  </span>
+              <CardContent className="pt-4">
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={stats?.trend_data || []}>
+                      <defs>
+                        <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="completedGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <XAxis 
+                        dataKey="month" 
+                        axisLine={false} 
+                        tickLine={false}
+                        tick={{ fill: '#94a3b8', fontSize: 12 }}
+                      />
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false}
+                        tick={{ fill: '#94a3b8', fontSize: 12 }}
+                        domain={[0, 100]}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Area 
+                        type="monotone" 
+                        dataKey="score" 
+                        stroke="#10b981" 
+                        strokeWidth={2}
+                        fill="url(#scoreGradient)"
+                        name="Score %"
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="completed" 
+                        stroke="#3b82f6" 
+                        strokeWidth={2}
+                        fill="url(#completedGradient)"
+                        name="Completed"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Card className="border-t-4 border-t-red-500 hover:shadow-lg transition-shadow" data-testid="critical-items-card">
-              <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4" />
-                  Critical Items
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <span className="text-4xl font-bold text-red-600">{stats?.critical_items || 0}</span>
-              </CardContent>
-            </Card>
-          </motion.div>
-
+          {/* Severity Distribution */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
+            className="lg:col-span-4"
           >
-            <Card className="border-t-4 border-t-yellow-500 hover:shadow-lg transition-shadow" data-testid="high-priority-card">
+            <Card className="h-full border-slate-200/60" data-testid="severity-chart-card">
               <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  High Priority
-                </CardDescription>
+                <CardTitle className="text-lg font-semibold">By Severity</CardTitle>
+                <CardDescription>Obligation distribution</CardDescription>
               </CardHeader>
               <CardContent>
-                <span className="text-4xl font-bold text-yellow-600">{stats?.high_priority_items || 0}</span>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={stats?.severity_breakdown || []}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={75}
+                        paddingAngle={4}
+                        dataKey="value"
+                      >
+                        {(stats?.severity_breakdown || []).map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {(stats?.severity_breakdown || []).map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2 text-sm">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.fill }} />
+                      <span className="text-slate-600">{item.name}</span>
+                      <span className="text-slate-900 font-medium ml-auto">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </motion.div>
         </div>
 
-        {/* Categories & Deadlines Grid */}
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Categories */}
-          <div className="lg:col-span-2">
-            <Card data-testid="categories-card">
-              <CardHeader>
-                <CardTitle className="font-heading">Legislation Categories</CardTitle>
-                <CardDescription>Click a category to view detailed obligations</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {Object.entries(stats?.categories || {}).map(([category, data], idx) => {
-                    const IconComponent = CATEGORY_ICONS[category] || Briefcase;
-                    const progress = data.total > 0 ? (data.completed / data.total) * 100 : 0;
-                    
-                    return (
-                      <motion.button
-                        key={category}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.1 * idx }}
-                        onClick={() => navigate(`/compliance/${companyId || ''}?category=${encodeURIComponent(category)}`)}
-                        className={`p-5 rounded-xl border-2 text-left transition-all hover:shadow-md ${
-                          selectedCategory === category 
-                            ? 'border-emerald-600 bg-emerald-50' 
-                            : 'border-slate-200 hover:border-slate-300 bg-white'
-                        }`}
-                        data-testid={`category-${category.toLowerCase().replace(/\s+/g, '-')}-btn`}
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className={`p-2.5 rounded-lg ${CATEGORY_COLORS[category]?.split(' ')[0] || 'bg-slate-100'}`}>
-                            <IconComponent className={`w-5 h-5 ${CATEGORY_COLORS[category]?.split(' ')[1] || 'text-slate-600'}`} />
+        {/* Categories & Deadlines Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Categories Section */}
+          <div className="lg:col-span-8 space-y-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.45 }}
+            >
+              <Card className="border-slate-200/60" data-testid="categories-card">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg font-semibold">Legislation Categories</CardTitle>
+                      <CardDescription>Click to view detailed obligations</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {Object.entries(stats?.categories || {}).map(([category, data], idx) => {
+                      const IconComponent = CATEGORY_ICONS[category] || Briefcase;
+                      const colors = CATEGORY_COLORS[category] || { bg: "bg-slate-50", text: "text-slate-700", accent: "#64748b", ring: "ring-slate-200" };
+                      const progress = data.total > 0 ? (data.completed / data.total) * 100 : 0;
+                      
+                      return (
+                        <motion.button
+                          key={category}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.1 * idx }}
+                          onClick={() => navigate(`/compliance/${companyId || ''}?category=${encodeURIComponent(category)}`)}
+                          className={`group p-5 rounded-xl border-2 text-left transition-all hover:shadow-lg ${colors.bg} border-transparent hover:border-current ring-1 ${colors.ring} hover:ring-2`}
+                          style={{ '--tw-ring-color': colors.accent + '40' }}
+                          data-testid={`category-${category.toLowerCase().replace(/\s+/g, '-')}-btn`}
+                        >
+                          <div className="flex items-start justify-between mb-4">
+                            <div className={`p-2.5 rounded-xl ${colors.bg} ring-1 ${colors.ring}`}>
+                              <IconComponent className={`w-5 h-5 ${colors.text}`} />
+                            </div>
+                            <ChevronRight className={`w-5 h-5 ${colors.text} opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all`} />
                           </div>
-                          <ChevronRight className="w-5 h-5 text-slate-400" />
-                        </div>
-                        <h3 className="font-semibold text-slate-900 mb-1">{category}</h3>
-                        <p className="text-sm text-slate-500 mb-3">
-                          {data.completed} of {data.total} completed
-                        </p>
-                        <Progress value={progress} className="h-1.5" />
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+                          <h3 className="font-semibold text-slate-900 mb-1">{category}</h3>
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="text-sm text-slate-500">
+                              {data.completed}/{data.total} completed
+                            </span>
+                            {data.critical > 0 && (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 bg-red-50 text-red-700 border-red-200">
+                                {data.critical} critical
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="relative h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                            <div 
+                              className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
+                              style={{ width: `${progress}%`, backgroundColor: colors.accent }}
+                            />
+                          </div>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
 
-            {/* Business Operations Sub-categories */}
-            <Card className="mt-6" data-testid="business-ops-card">
-              <CardHeader>
-                <CardTitle className="font-heading text-lg">Business Operations Breakdown</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {["Local Government", "ICT", "Marketing", "Consumer Affairs", "Property", "Finance", "People"].map((sub) => (
-                    <Button
-                      key={sub}
-                      variant="outline"
-                      size="sm"
-                      className="rounded-full"
-                      onClick={() => navigate(`/compliance/${companyId || ''}?category=Business%20Operations&sub=${encodeURIComponent(sub)}`)}
-                      data-testid={`business-ops-${sub.toLowerCase().replace(/\s+/g, '-')}-btn`}
-                    >
-                      {sub}
-                    </Button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            {/* Category Distribution Bar Chart */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <Card className="border-slate-200/60" data-testid="category-bar-chart">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-semibold">Category Overview</CardTitle>
+                  <CardDescription>Obligations by category and status</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-48">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={categoryPieData} layout="vertical">
+                        <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                        <YAxis 
+                          dataKey="name" 
+                          type="category" 
+                          axisLine={false} 
+                          tickLine={false} 
+                          tick={{ fill: '#475569', fontSize: 12 }}
+                          width={110}
+                        />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Bar dataKey="completed" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} name="Completed" />
+                        <Bar dataKey="value" stackId="a" fill="#e2e8f0" radius={[0, 4, 4, 0]} name="Remaining" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
 
           {/* Upcoming Deadlines */}
-          <div>
-            <Card className="h-fit" data-testid="deadlines-card">
-              <CardHeader>
-                <CardTitle className="font-heading">Upcoming Deadlines</CardTitle>
-                <CardDescription>Next 30 days</CardDescription>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55 }}
+            className="lg:col-span-4"
+          >
+            <Card className="h-fit border-slate-200/60 sticky top-24" data-testid="deadlines-card">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg font-semibold">Upcoming Deadlines</CardTitle>
+                    <CardDescription>Next 30 days</CardDescription>
+                  </div>
+                  <Badge variant="outline" className="text-xs">
+                    {(stats?.upcoming_deadlines || []).length} items
+                  </Badge>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 {(stats?.upcoming_deadlines || []).slice(0, 5).map((deadline, idx) => {
                   const daysUntil = getDaysUntil(deadline.due_date);
                   return (
@@ -427,23 +752,28 @@ export default function Dashboard() {
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.1 * idx }}
-                      className="p-4 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
+                      className="group p-3.5 rounded-xl bg-slate-50 hover:bg-slate-100 transition-all cursor-pointer border border-transparent hover:border-slate-200"
                       onClick={() => navigate(`/compliance/${companyId || ''}`)}
                       data-testid={`deadline-${idx}`}
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <Badge className={`${getSeverityBadge(deadline.severity)} text-xs`}>
+                        <Badge className={`${getSeverityBadge(deadline.severity)} text-[10px] font-medium`}>
                           {deadline.severity}
                         </Badge>
-                        <span className={`text-xs font-medium ${daysUntil <= 7 ? 'text-red-600' : daysUntil <= 30 ? 'text-amber-600' : 'text-slate-500'}`}>
-                          {daysUntil <= 0 ? 'Overdue!' : `${daysUntil} days`}
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                          daysUntil <= 7 ? 'bg-red-100 text-red-700' : 
+                          daysUntil <= 30 ? 'bg-amber-100 text-amber-700' : 
+                          'bg-slate-100 text-slate-600'
+                        }`}>
+                          {daysUntil <= 0 ? 'Overdue!' : `${daysUntil}d`}
                         </span>
                       </div>
-                      <h4 className="font-medium text-slate-900 text-sm mb-1">
+                      <h4 className="font-medium text-slate-900 text-sm mb-1 line-clamp-2 group-hover:text-emerald-700 transition-colors">
                         {deadline.obligation}
                       </h4>
-                      <p className="text-xs text-slate-500">
-                        Due: {formatDate(deadline.due_date)}
+                      <p className="text-xs text-slate-500 flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {formatDate(deadline.due_date)}
                       </p>
                     </motion.div>
                   );
@@ -452,13 +782,14 @@ export default function Dashboard() {
                 {(!stats?.upcoming_deadlines || stats.upcoming_deadlines.length === 0) && (
                   <div className="text-center py-8 text-slate-500">
                     <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-emerald-500" />
-                    <p>No upcoming deadlines!</p>
+                    <p className="font-medium">All caught up!</p>
+                    <p className="text-sm">No upcoming deadlines</p>
                   </div>
                 )}
 
                 <Button 
                   variant="outline" 
-                  className="w-full mt-4"
+                  className="w-full mt-2 hover:bg-slate-900 hover:text-white transition-colors"
                   onClick={() => navigate(`/compliance/${companyId || ''}`)}
                   data-testid="view-all-deadlines-btn"
                 >
@@ -467,7 +798,7 @@ export default function Dashboard() {
                 </Button>
               </CardContent>
             </Card>
-          </div>
+          </motion.div>
         </div>
       </main>
     </div>
