@@ -721,7 +721,9 @@ async def delete_user(user_id: str):
     return {"message": "User deleted"}
 
 @api_router.post("/users/bulk-action")
-async def bulk_user_action(action: str, user_ids: List[str]):
+async def bulk_user_action(data: BulkUserAction):
+    action = data.action
+    user_ids = data.user_ids
     if action == "delete":
         result = await db.users.delete_many({"id": {"$in": user_ids}})
         return {"message": f"Deleted {result.deleted_count} users"}
