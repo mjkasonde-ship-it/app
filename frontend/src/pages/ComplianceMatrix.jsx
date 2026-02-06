@@ -220,7 +220,7 @@ export default function ComplianceMatrix() {
             <img 
               src="https://customer-assets.emergentagent.com/job_lusaka-legal-tech/artifacts/xxn68wwl_Cove%20Premium%20Logo.png" 
               alt="Cove" 
-              className="h-10 cursor-pointer"
+              className="h-16 cursor-pointer"
               onClick={() => navigate('/')}
             />
           </div>
