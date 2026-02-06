@@ -253,7 +253,7 @@ export default function Dashboard() {
             Welcome back, {stats?.company?.name || 'User'}
           </h1>
           <p className="text-slate-600">
-            Here's your compliance overview for {stats?.company?.sector} - {stats?.company?.sub_sector}
+            Here&apos;s your compliance overview for {stats?.company?.sector} - {stats?.company?.sub_sector}
           </p>
         </div>
 

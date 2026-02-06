@@ -153,7 +153,7 @@ export default function Onboarding() {
           
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700">
             <p className="text-slate-300 italic mb-4">
-              "Cove transformed how we manage compliance. We haven't missed a deadline since we started using it."
+              &ldquo;Cove transformed how we manage compliance. We haven&apos;t missed a deadline since we started using it.&rdquo;
             </p>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-amber-600 rounded-full flex items-center justify-center text-white font-semibold">
@@ -234,7 +234,7 @@ export default function Onboarding() {
                       Company Information
                     </h2>
                     <p className="text-slate-600">
-                      Enter your company's basic details
+                      Enter your company&apos;s basic details
                     </p>
                   </div>
                   
@@ -299,7 +299,7 @@ export default function Onboarding() {
                       Company Size
                     </h2>
                     <p className="text-slate-600">
-                      Select your organization's size
+                      Select your organization&apos;s size
                     </p>
                   </div>
                   
