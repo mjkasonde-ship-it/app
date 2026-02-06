@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-ro
 import axios from "axios";
 import { Toaster, toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { Play, X, ChevronLeft, ChevronRight, CheckCircle, FileText, BarChart3, Shield, Bell, Users } from "lucide-react";
 
 // Pages
 import Onboarding from "./pages/Onboarding";
