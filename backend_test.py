@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Dict, List, Any
 
 class CoveAPITester:
-    def __init__(self, base_url: str = "https://lusaka-legal-tech.preview.emergentagent.com/api"):
+    def __init__(self, base_url: str = "https://cove-zambia.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.session = requests.Session()
         self.session.headers.update({
