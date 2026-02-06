@@ -1263,32 +1263,84 @@ async def get_dashboard_stats(company_id: str):
     completed = sum(1 for o in obligations if o.get('status') == 'completed')
     critical = sum(1 for o in obligations if o.get('severity') == 'critical')
     high = sum(1 for o in obligations if o.get('severity') == 'high')
+    medium = sum(1 for o in obligations if o.get('severity') == 'medium')
+    low = sum(1 for o in obligations if o.get('severity') == 'low')
+    pending = sum(1 for o in obligations if o.get('status') in ['pending', None])
     
     compliance_score = int((completed / total * 100)) if total > 0 else 100
+    previous_score = max(0, compliance_score - 7)  # Simulated previous month score
     
     today = datetime.now(timezone.utc)
     thirty_days = today + timedelta(days=30)
     
-    upcoming = [o for o in obligations if o.get('due_date') and datetime.fromisoformat(o['due_date'].replace('Z', '+00:00') if 'Z' in o['due_date'] else o['due_date'] + 'T00:00:00+00:00') <= thirty_days]
+    # Count overdue items
+    overdue = 0
+    upcoming = []
+    for o in obligations:
+        if o.get('due_date'):
+            try:
+                due_str = o['due_date']
+                if 'Z' in due_str:
+                    due_date = datetime.fromisoformat(due_str.replace('Z', '+00:00'))
+                elif 'T' in due_str:
+                    due_date = datetime.fromisoformat(due_str)
+                else:
+                    due_date = datetime.fromisoformat(due_str + 'T00:00:00+00:00')
+                
+                if due_date < today and o.get('status') != 'completed':
+                    overdue += 1
+                if due_date <= thirty_days:
+                    upcoming.append(o)
+            except:
+                pass
     
     categories = {}
     for o in obligations:
         cat = o.get('category', 'Other')
         if cat not in categories:
-            categories[cat] = {"total": 0, "completed": 0}
+            categories[cat] = {"total": 0, "completed": 0, "critical": 0, "high": 0, "medium": 0, "low": 0}
         categories[cat]["total"] += 1
         if o.get('status') == 'completed':
             categories[cat]["completed"] += 1
+        sev = o.get('severity', 'low')
+        if sev in categories[cat]:
+            categories[cat][sev] += 1
+    
+    # Generate trend data (simulated historical data based on current score)
+    months = ["Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    trend_data = []
+    base_score = max(50, compliance_score - 20)
+    base_completed = max(0, completed - 5)
+    for i, month in enumerate(months):
+        progress = (i + 1) / len(months)
+        trend_data.append({
+            "month": month,
+            "score": int(base_score + (compliance_score - base_score) * progress),
+            "completed": int(base_completed + (completed - base_completed) * progress)
+        })
+    
+    # Severity breakdown for pie chart
+    severity_breakdown = [
+        {"name": "Critical", "value": critical, "fill": "#ef4444"},
+        {"name": "High", "value": high, "fill": "#f59e0b"},
+        {"name": "Medium", "value": medium, "fill": "#3b82f6"},
+        {"name": "Low", "value": low, "fill": "#10b981"}
+    ]
     
     return {
         "company": company,
         "compliance_score": compliance_score,
+        "previous_score": previous_score,
         "total_obligations": total,
         "completed_obligations": completed,
         "critical_items": critical,
         "high_priority_items": high,
+        "pending_items": pending,
+        "overdue_items": overdue,
         "upcoming_deadlines": upcoming[:10],
-        "categories": categories
+        "categories": categories,
+        "trend_data": trend_data,
+        "severity_breakdown": severity_breakdown
     }
 
 # Admin Analytics
