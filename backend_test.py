@@ -1,392 +1,448 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for Cove Legal Tech SaaS Platform
-Tests all API endpoints to ensure proper functionality before frontend testing.
+Comprehensive Backend API Testing for Cove Legal Tech Platform
+Tests all Super Admin enhancement endpoints and core functionality
 """
 
 import requests
 import sys
 import json
 from datetime import datetime
+from typing import Dict, List, Any
 
 class CoveAPITester:
-    def __init__(self, base_url="https://lusaka-legal-tech.preview.emergentagent.com/api"):
+    def __init__(self, base_url: str = "https://lusaka-legal-tech.preview.emergentagent.com/api"):
         self.base_url = base_url
+        self.session = requests.Session()
+        self.session.headers.update({
+            'Content-Type': 'application/json',
+            'User-Agent': 'Cove-API-Tester/1.0'
+        })
         self.tests_run = 0
         self.tests_passed = 0
         self.test_results = []
-        self.test_company_id = None
-        self.test_user_id = None
-        self.test_obligation_id = None
-
-    def log_test(self, name, passed, details="", error=""):
-        """Log test result"""
+        
+    def log_test(self, endpoint: str, method: str, status_code: int, expected: int, passed: bool, response_data: Any = None, error: str = None):
+        """Log individual test results"""
         self.tests_run += 1
         if passed:
             self.tests_passed += 1
-            status = "✅ PASSED"
-        else:
-            status = "❌ FAILED"
+            
+        result = {
+            "endpoint": endpoint,
+            "method": method,
+            "expected_status": expected,
+            "actual_status": status_code,
+            "passed": passed,
+            "timestamp": datetime.now().isoformat(),
+            "error": error,
+            "has_data": response_data is not None and len(str(response_data)) > 0
+        }
+        self.test_results.append(result)
         
-        print(f"{status} - {name}")
-        if details:
-            print(f"   Details: {details}")
+        status_icon = "✅" if passed else "❌"
+        print(f"{status_icon} [{method}] {endpoint} - Expected: {expected}, Got: {status_code}")
         if error:
             print(f"   Error: {error}")
+        
+    def test_endpoint(self, method: str, endpoint: str, expected_status: int = 200, data: Dict = None, params: Dict = None) -> tuple:
+        """Test a single endpoint"""
+        url = f"{self.base_url}/{endpoint}"
+        
+        try:
+            if method.upper() == 'GET':
+                response = self.session.get(url, params=params)
+            elif method.upper() == 'POST':
+                response = self.session.post(url, json=data, params=params)
+            elif method.upper() == 'PUT':
+                response = self.session.put(url, json=data, params=params)
+            elif method.upper() == 'DELETE':
+                response = self.session.delete(url, params=params)
+            elif method.upper() == 'PATCH':
+                response = self.session.patch(url, json=data, params=params)
+            else:
+                raise ValueError(f"Unsupported method: {method}")
+                
+            passed = response.status_code == expected_status
+            response_data = None
             
-        self.test_results.append({
-            "test": name,
-            "passed": passed,
-            "details": details,
-            "error": error
-        })
-
-    def test_health_endpoints(self):
-        """Test basic health and info endpoints"""
-        print("\n🔍 Testing Health Endpoints...")
-        
-        # Test root endpoint
-        try:
-            response = requests.get(f"{self.base_url}/", timeout=10)
-            if response.status_code == 200:
-                data = response.json()
-                self.log_test("Root endpoint", True, f"Status: {response.status_code}, Message: {data.get('message', '')}")
-            else:
-                self.log_test("Root endpoint", False, f"Status: {response.status_code}")
-        except Exception as e:
-            self.log_test("Root endpoint", False, error=str(e))
-
-        # Test health endpoint
-        try:
-            response = requests.get(f"{self.base_url}/health", timeout=10)
-            if response.status_code == 200:
-                data = response.json()
-                self.log_test("Health endpoint", True, f"Status: {data.get('status', '')}")
-            else:
-                self.log_test("Health endpoint", False, f"Status: {response.status_code}")
-        except Exception as e:
-            self.log_test("Health endpoint", False, error=str(e))
-
-    def test_sectors_endpoint(self):
-        """Test sectors/legislation data endpoints"""
-        print("\n🔍 Testing Sectors Endpoints...")
-        
-        try:
-            response = requests.get(f"{self.base_url}/sectors", timeout=10)
-            if response.status_code == 200:
-                data = response.json()
-                sectors = data.get('sectors', {})
-                total_sectors = len(sectors)
-                self.log_test("Get sectors", True, f"Found {total_sectors} sectors: {list(sectors.keys())}")
+            try:
+                if response.content:
+                    response_data = response.json()
+            except json.JSONDecodeError:
+                response_data = {"raw_content": response.text[:500]}
                 
-                # Test specific legislation endpoint
-                if 'mining' in sectors and 'Base Metals' in sectors['mining']:
-                    leg_response = requests.get(f"{self.base_url}/legislation/mining/Base Metals", timeout=10)
-                    if leg_response.status_code == 200:
-                        leg_data = leg_response.json()
-                        obligations = leg_data.get('obligations', [])
-                        self.log_test("Get legislation data", True, f"Found {len(obligations)} obligations for mining/Base Metals")
-                    else:
-                        self.log_test("Get legislation data", False, f"Status: {leg_response.status_code}")
-                else:
-                    self.log_test("Get legislation data", False, "Mining sector or Base Metals not found")
-            else:
-                self.log_test("Get sectors", False, f"Status: {response.status_code}")
+            self.log_test(endpoint, method, response.status_code, expected_status, passed, response_data)
+            return passed, response_data
+            
         except Exception as e:
-            self.log_test("Get sectors", False, error=str(e))
+            error_msg = str(e)
+            self.log_test(endpoint, method, 0, expected_status, False, None, error_msg)
+            return False, {"error": error_msg}
 
-    def test_company_endpoints(self):
-        """Test company CRUD operations"""
-        print("\n🔍 Testing Company Endpoints...")
+    def test_core_endpoints(self):
+        """Test basic API endpoints"""
+        print("\n🔍 Testing Core API Endpoints...")
         
-        # Create test company
-        test_company_data = {
-            "name": "Test Mining Corp",
-            "registration_number": "TEST123456",
-            "email": "test@testmining.zm",
-            "phone": "+260123456789",
-            "address": "Test Address, Lusaka",
-            "size": "medium",
-            "sector": "mining",
-            "sub_sector": "Base Metals"
+        # Health check
+        self.test_endpoint("GET", "health")
+        
+        # Root endpoint
+        self.test_endpoint("GET", "")
+        
+        # Sectors
+        self.test_endpoint("GET", "sectors")
+        
+    def test_admin_analytics(self):
+        """Test admin analytics endpoints"""
+        print("\n📊 Testing Admin Analytics...")
+        
+        self.test_endpoint("GET", "admin/analytics")
+        self.test_endpoint("GET", "admin/revenue")
+        
+    def test_user_management(self):
+        """Test user management endpoints"""
+        print("\n👥 Testing User Management...")
+        
+        # Get users
+        self.test_endpoint("GET", "users")
+        
+        # Test user creation
+        test_user = {
+            "name": "Test Admin User",
+            "email": "test.admin@cove.zm",
+            "role": "super-admin",
+            "department": "Testing",
+            "phone": "+260 97 000 0000"
         }
+        success, user_data = self.test_endpoint("POST", "users", 200, test_user)
         
-        try:
-            response = requests.post(f"{self.base_url}/companies", json=test_company_data, timeout=15)
-            if response.status_code == 200:
-                company = response.json()
-                self.test_company_id = company.get('id')
-                self.log_test("Create company", True, f"Created company ID: {self.test_company_id}, Score: {company.get('compliance_score', 0)}")
-            else:
-                self.log_test("Create company", False, f"Status: {response.status_code}, Response: {response.text}")
-                return
-        except Exception as e:
-            self.log_test("Create company", False, error=str(e))
-            return
-
-        # Get all companies
-        try:
-            response = requests.get(f"{self.base_url}/companies", timeout=10)
-            if response.status_code == 200:
-                companies = response.json()
-                self.log_test("Get all companies", True, f"Found {len(companies)} companies")
-            else:
-                self.log_test("Get all companies", False, f"Status: {response.status_code}")
-        except Exception as e:
-            self.log_test("Get all companies", False, error=str(e))
-
-        # Get specific company
-        if self.test_company_id:
-            try:
-                response = requests.get(f"{self.base_url}/companies/{self.test_company_id}", timeout=10)
-                if response.status_code == 200:
-                    company = response.json()
-                    self.log_test("Get specific company", True, f"Retrieved company: {company.get('name')}")
-                else:
-                    self.log_test("Get specific company", False, f"Status: {response.status_code}")
-            except Exception as e:
-                self.log_test("Get specific company", False, error=str(e))
-
-    def test_obligations_endpoints(self):
-        """Test obligations endpoints"""
-        print("\n🔍 Testing Obligations Endpoints...")
+        if success and user_data.get("id"):
+            user_id = user_data["id"]
+            
+            # Test get specific user
+            self.test_endpoint("GET", f"users/{user_id}")
+            
+            # Test user update
+            update_data = {"name": "Updated Test User", "status": "active"}
+            self.test_endpoint("PUT", f"users/{user_id}", 200, update_data)
+            
+            # Test bulk user actions
+            bulk_data = {"action": "activate", "user_ids": [user_id]}
+            self.test_endpoint("POST", "users/bulk-action", 200, bulk_data)
+            
+            # Clean up - delete test user
+            self.test_endpoint("DELETE", f"users/{user_id}")
         
-        # Get all obligations
-        try:
-            response = requests.get(f"{self.base_url}/obligations", timeout=10)
-            if response.status_code == 200:
-                obligations = response.json()
-                self.log_test("Get all obligations", True, f"Found {len(obligations)} obligations")
-                
-                if obligations:
-                    self.test_obligation_id = obligations[0].get('id')
-                    
-                    # Test obligation filters
-                    if self.test_company_id:
-                        filter_response = requests.get(f"{self.base_url}/obligations?company_id={self.test_company_id}", timeout=10)
-                        if filter_response.status_code == 200:
-                            filtered_obligations = filter_response.json()
-                            self.log_test("Get obligations by company", True, f"Found {len(filtered_obligations)} obligations for company")
-                        else:
-                            self.log_test("Get obligations by company", False, f"Status: {filter_response.status_code}")
-                    
-                    # Test category filter
-                    category_response = requests.get(f"{self.base_url}/obligations?category=Corporate", timeout=10)
-                    if category_response.status_code == 200:
-                        cat_obligations = category_response.json()
-                        self.log_test("Get obligations by category", True, f"Found {len(cat_obligations)} Corporate obligations")
-                    else:
-                        self.log_test("Get obligations by category", False, f"Status: {category_response.status_code}")
-                        
-            else:
-                self.log_test("Get all obligations", False, f"Status: {response.status_code}")
-        except Exception as e:
-            self.log_test("Get all obligations", False, error=str(e))
-
-        # Get specific obligation
-        if self.test_obligation_id:
-            try:
-                response = requests.get(f"{self.base_url}/obligations/{self.test_obligation_id}", timeout=10)
-                if response.status_code == 200:
-                    obligation = response.json()
-                    self.log_test("Get specific obligation", True, f"Retrieved obligation: {obligation.get('obligation', '')[:50]}...")
-                else:
-                    self.log_test("Get specific obligation", False, f"Status: {response.status_code}")
-            except Exception as e:
-                self.log_test("Get specific obligation", False, error=str(e))
-
-        # Update obligation status
-        if self.test_obligation_id:
-            try:
-                response = requests.patch(f"{self.base_url}/obligations/{self.test_obligation_id}/status", 
-                                        params={"status": "completed"}, timeout=10)
-                if response.status_code == 200:
-                    result = response.json()
-                    self.log_test("Update obligation status", True, f"Updated to: {result.get('status')}")
-                else:
-                    self.log_test("Update obligation status", False, f"Status: {response.status_code}")
-            except Exception as e:
-                self.log_test("Update obligation status", False, error=str(e))
-
-    def test_dashboard_endpoint(self):
-        """Test dashboard stats endpoint"""
-        print("\n🔍 Testing Dashboard Endpoint...")
+        # Test user filters
+        self.test_endpoint("GET", "users", params={"role": "super-admin"})
+        self.test_endpoint("GET", "users", params={"status": "active"})
         
-        if not self.test_company_id:
-            self.log_test("Dashboard stats", False, "No test company ID available")
-            return
-
-        try:
-            response = requests.get(f"{self.base_url}/dashboard/stats/{self.test_company_id}", timeout=10)
-            if response.status_code == 200:
-                stats = response.json()
-                details = f"Score: {stats.get('compliance_score')}%, Total: {stats.get('total_obligations')}, Critical: {stats.get('critical_items')}"
-                self.log_test("Dashboard stats", True, details)
-            else:
-                self.log_test("Dashboard stats", False, f"Status: {response.status_code}")
-        except Exception as e:
-            self.log_test("Dashboard stats", False, error=str(e))
-
-    def test_ai_summary_endpoint(self):
-        """Test AI summary generation"""
-        print("\n🔍 Testing AI Summary Endpoint...")
+    def test_company_management(self):
+        """Test company management endpoints"""
+        print("\n🏢 Testing Company Management...")
         
-        # Test AI summary with sample data
-        test_ai_request = {
+        # Get companies
+        self.test_endpoint("GET", "companies")
+        
+        # Test company creation
+        test_company = {
+            "name": "Test Mining Corp",
+            "registration_number": "TEST001",
+            "size": "large",
+            "sector": "mining",
+            "sub_sector": "Base Metals",
+            "email": "admin@testmining.zm",
+            "phone": "+260 97 111 1111",
+            "address": "Test Address, Lusaka"
+        }
+        success, company_data = self.test_endpoint("POST", "companies", 200, test_company)
+        
+        if success and company_data.get("id"):
+            company_id = company_data["id"]
+            
+            # Test get specific company
+            self.test_endpoint("GET", f"companies/{company_id}")
+            
+            # Test company update
+            update_data = {"subscription_plan": "Enterprise"}
+            self.test_endpoint("PUT", f"companies/{company_id}", 200, update_data)
+            
+            # Clean up
+            self.test_endpoint("DELETE", f"companies/{company_id}")
+    
+    def test_roles_and_permissions(self):
+        """Test roles and permissions"""
+        print("\n🔐 Testing Roles & Permissions...")
+        
+        self.test_endpoint("GET", "roles")
+        
+        # Test role creation
+        role_data = {
+            "name": "test-role",
+            "display_name": "Test Role",
+            "description": "Role for testing purposes",
+            "permissions": ["test.view", "test.edit"]
+        }
+        self.test_endpoint("POST", "roles", 200, role_data)
+        
+    def test_audit_logs(self):
+        """Test audit logging"""
+        print("\n📋 Testing Audit Logs...")
+        
+        self.test_endpoint("GET", "audit-logs")
+        self.test_endpoint("GET", "audit-logs", params={"limit": 50, "offset": 0})
+        self.test_endpoint("GET", "audit-logs", params={"action": "user.create"})
+        
+    def test_support_tickets(self):
+        """Test support ticket system"""
+        print("\n🎫 Testing Support Tickets...")
+        
+        # Get tickets
+        self.test_endpoint("GET", "tickets")
+        
+        # Create test ticket
+        ticket_data = {
+            "user_id": "test-user-123",
+            "user_name": "Test User",
+            "company_id": "test-company-123",
+            "company_name": "Test Company",
+            "subject": "Test Support Ticket",
+            "description": "This is a test support ticket created during API testing",
+            "priority": "medium"
+        }
+        success, ticket_response = self.test_endpoint("POST", "tickets", 200, ticket_data)
+        
+        if success and ticket_response.get("id"):
+            ticket_id = ticket_response["id"]
+            
+            # Test get specific ticket
+            self.test_endpoint("GET", f"tickets/{ticket_id}")
+            
+            # Test ticket update
+            self.test_endpoint("PATCH", f"tickets/{ticket_id}", 200, {"status": "in_progress"})
+            
+            # Test add ticket message
+            message_data = {
+                "sender_id": "admin-123",
+                "sender_name": "Admin User",
+                "message": "This is a test message for the ticket",
+                "is_internal": False
+            }
+            self.test_endpoint("POST", f"tickets/{ticket_id}/messages", 200, message_data)
+        
+        # Test ticket filters
+        self.test_endpoint("GET", "tickets", params={"status": "open"})
+        self.test_endpoint("GET", "tickets", params={"priority": "high"})
+        
+    def test_subscription_plans(self):
+        """Test subscription plans"""
+        print("\n💳 Testing Subscription Plans...")
+        
+        self.test_endpoint("GET", "subscription-plans")
+        
+        # Test plan creation
+        plan_data = {
+            "name": "Test Plan",
+            "price": 1500.0,
+            "features": ["Feature 1", "Feature 2", "Feature 3"],
+            "user_limit": 25,
+            "storage_limit_gb": 25
+        }
+        self.test_endpoint("POST", "subscription-plans", 200, plan_data)
+        
+    def test_invoices(self):
+        """Test invoice management"""
+        print("\n💰 Testing Invoices...")
+        
+        self.test_endpoint("GET", "invoices")
+        self.test_endpoint("GET", "invoices", params={"status": "pending"})
+        
+        # Note: Invoice creation is typically automatic, so we just test status update
+        # We'll need an existing invoice ID for this test
+        
+    def test_legislation_management(self):
+        """Test legislation database"""
+        print("\n⚖️ Testing Legislation Management...")
+        
+        self.test_endpoint("GET", "legislation")
+        self.test_endpoint("GET", "legislation", params={"sector": "mining"})
+        
+        # Test legislation creation
+        legislation_data = {
+            "statute_name": "Test Mining Act",
+            "act_number": "TEST-001",
+            "sector": "mining",
+            "sub_sector": "Base Metals",
+            "category": "Core Operations",
+            "description": "Test legislation for mining operations",
+            "effective_date": "2026-01-01"
+        }
+        success, leg_response = self.test_endpoint("POST", "legislation", 200, legislation_data)
+        
+        if success and leg_response.get("id"):
+            leg_id = leg_response["id"]
+            
+            # Test legislation update
+            update_data = {
+                "statute_name": "Updated Test Mining Act",
+                "description": "Updated test legislation"
+            }
+            self.test_endpoint("PUT", f"legislation/{leg_id}", 200, update_data)
+            
+            # Clean up
+            self.test_endpoint("DELETE", f"legislation/{leg_id}")
+        
+    def test_global_search(self):
+        """Test global search functionality"""
+        print("\n🔍 Testing Global Search...")
+        
+        # Test search with various queries
+        self.test_endpoint("GET", "search", params={"q": "test"})
+        self.test_endpoint("GET", "search", params={"q": "admin"})
+        self.test_endpoint("GET", "search", params={"q": "mining"})
+        self.test_endpoint("GET", "search", params={"q": "co"})  # Short query
+        
+    def test_notifications(self):
+        """Test activity notifications"""
+        print("\n🔔 Testing Activity Notifications...")
+        
+        self.test_endpoint("GET", "activity-notifications")
+        self.test_endpoint("GET", "activity-notifications", params={"limit": 5, "unread_only": "true"})
+        
+        # Test mark as read
+        mark_read_data = {"notification_ids": []}  # Empty to mark all as read
+        self.test_endpoint("POST", "activity-notifications/mark-read", 200, mark_read_data)
+        
+    def test_system_settings(self):
+        """Test system settings"""
+        print("\n⚙️ Testing System Settings...")
+        
+        self.test_endpoint("GET", "settings/system")
+        
+        # Test settings update
+        settings_data = {
+            "id": "system-settings",
+            "platform_name": "Cove Legal Tech - Test Mode",
+            "support_email": "support@cove.zm",
+            "default_language": "en",
+            "timezone": "Africa/Lusaka",
+            "date_format": "DD/MM/YYYY",
+            "currency": "ZMW",
+            "session_timeout_minutes": 60,
+            "password_min_length": 8,
+            "mfa_required_roles": [],
+            "backup_frequency": "daily"
+        }
+        self.test_endpoint("PUT", "settings/system", 200, settings_data)
+        
+    def test_ai_integration(self):
+        """Test AI summary functionality"""
+        print("\n🤖 Testing AI Integration...")
+        
+        ai_request = {
             "statute": "Mines and Minerals Development Act No. 11 of 2015",
             "obligation": "Annual Mining License Renewal",
             "action_required": "Submit renewal application with updated environmental reports"
         }
+        self.test_endpoint("POST", "ai/summary", 200, ai_request)
         
-        try:
-            response = requests.post(f"{self.base_url}/ai/summary", json=test_ai_request, timeout=30)
-            if response.status_code == 200:
-                summary = response.json()
-                details = f"Generated by: {summary.get('approved_by', '')}, Key points: {len(summary.get('key_points', []))}"
-                self.log_test("AI Summary generation", True, details)
-                print(f"   Sample summary: {summary.get('summary', '')[:100]}...")
-            else:
-                self.log_test("AI Summary generation", False, f"Status: {response.status_code}, Response: {response.text}")
-        except Exception as e:
-            self.log_test("AI Summary generation", False, error=str(e))
-
-    def test_user_endpoints(self):
-        """Test user management endpoints"""
-        print("\n🔍 Testing User Endpoints...")
+    def test_obligations_and_documents(self):
+        """Test obligations and document management"""
+        print("\n📋 Testing Obligations & Documents...")
         
-        # Create test user
-        test_user_data = {
-            "email": "test.user@testcorp.zm",
-            "name": "Test User",
-            "role": "corporate-user",
-            "company_id": self.test_company_id
-        }
+        # Test obligations
+        self.test_endpoint("GET", "obligations")
+        self.test_endpoint("GET", "obligations", params={"category": "Core Operations"})
+        self.test_endpoint("GET", "obligations", params={"severity": "critical"})
         
-        try:
-            response = requests.post(f"{self.base_url}/users", json=test_user_data, timeout=10)
-            if response.status_code == 200:
-                user = response.json()
-                self.test_user_id = user.get('id')
-                self.log_test("Create user", True, f"Created user ID: {self.test_user_id}, Role: {user.get('role')}")
-            else:
-                self.log_test("Create user", False, f"Status: {response.status_code}, Response: {response.text}")
-        except Exception as e:
-            self.log_test("Create user", False, error=str(e))
-
-        # Get all users
-        try:
-            response = requests.get(f"{self.base_url}/users", timeout=10)
-            if response.status_code == 200:
-                users = response.json()
-                self.log_test("Get all users", True, f"Found {len(users)} users")
-            else:
-                self.log_test("Get all users", False, f"Status: {response.status_code}")
-        except Exception as e:
-            self.log_test("Get all users", False, error=str(e))
-
-        # Delete test user
-        if self.test_user_id:
-            try:
-                response = requests.delete(f"{self.base_url}/users/{self.test_user_id}", timeout=10)
-                if response.status_code == 200:
-                    result = response.json()
-                    self.log_test("Delete user", True, result.get('message', 'User deleted'))
-                else:
-                    self.log_test("Delete user", False, f"Status: {response.status_code}")
-            except Exception as e:
-                self.log_test("Delete user", False, error=str(e))
-
-    def test_admin_analytics_endpoint(self):
-        """Test admin analytics endpoint"""
-        print("\n🔍 Testing Admin Analytics Endpoint...")
+        # Test documents
+        self.test_endpoint("GET", "documents")
+        self.test_endpoint("GET", "documents", params={"file_type": "pdf"})
         
-        try:
-            response = requests.get(f"{self.base_url}/admin/analytics", timeout=10)
-            if response.status_code == 200:
-                analytics = response.json()
-                details = f"Companies: {analytics.get('total_companies')}, Users: {analytics.get('total_users')}, Obligations: {analytics.get('total_obligations')}"
-                self.log_test("Admin analytics", True, details)
-            else:
-                self.log_test("Admin analytics", False, f"Status: {response.status_code}")
-        except Exception as e:
-            self.log_test("Admin analytics", False, error=str(e))
-
-    def test_notifications_endpoint(self):
-        """Test notifications endpoint"""
-        print("\n🔍 Testing Notifications Endpoint...")
-        
-        if not self.test_company_id or not self.test_obligation_id:
-            self.log_test("Notifications", False, "Missing company or obligation ID")
-            return
-
-        # Create notification
-        notification_data = {
-            "company_id": self.test_company_id,
-            "obligation_id": self.test_obligation_id,
-            "email": "test@company.zm",
-            "days_before": 7
-        }
-        
-        try:
-            response = requests.post(f"{self.base_url}/notifications", json=notification_data, timeout=10)
-            if response.status_code == 200:
-                notification = response.json()
-                self.log_test("Create notification", True, f"Created notification for {notification.get('email')}")
-            else:
-                self.log_test("Create notification", False, f"Status: {response.status_code}")
-        except Exception as e:
-            self.log_test("Create notification", False, error=str(e))
-
-        # Get notifications
-        try:
-            response = requests.get(f"{self.base_url}/notifications?company_id={self.test_company_id}", timeout=10)
-            if response.status_code == 200:
-                notifications = response.json()
-                self.log_test("Get notifications", True, f"Found {len(notifications)} notifications")
-            else:
-                self.log_test("Get notifications", False, f"Status: {response.status_code}")
-        except Exception as e:
-            self.log_test("Get notifications", False, error=str(e))
-
     def run_all_tests(self):
-        """Run all backend API tests"""
-        print("🚀 Starting Cove Legal Tech Backend API Tests")
-        print(f"🔗 Testing against: {self.base_url}")
+        """Run comprehensive API test suite"""
+        print("🚀 Starting Cove Legal Tech API Test Suite")
+        print(f"📍 Testing against: {self.base_url}")
         print("=" * 60)
         
-        # Test all endpoints in logical order
-        self.test_health_endpoints()
-        self.test_sectors_endpoint()
-        self.test_company_endpoints()
-        self.test_obligations_endpoints()
-        self.test_dashboard_endpoint()
-        self.test_ai_summary_endpoint()
-        self.test_user_endpoints()
-        self.test_admin_analytics_endpoint()
-        self.test_notifications_endpoint()
+        test_methods = [
+            self.test_core_endpoints,
+            self.test_admin_analytics,
+            self.test_user_management,
+            self.test_company_management,
+            self.test_roles_and_permissions,
+            self.test_audit_logs,
+            self.test_support_tickets,
+            self.test_subscription_plans,
+            self.test_invoices,
+            self.test_legislation_management,
+            self.test_global_search,
+            self.test_notifications,
+            self.test_system_settings,
+            self.test_ai_integration,
+            self.test_obligations_and_documents
+        ]
         
-        # Print final results
+        for test_method in test_methods:
+            try:
+                test_method()
+            except Exception as e:
+                print(f"❌ Test method {test_method.__name__} failed with error: {str(e)}")
+                continue
+                
+        self.print_summary()
+        return self.tests_passed / self.tests_run if self.tests_run > 0 else 0
+        
+    def print_summary(self):
+        """Print test summary"""
         print("\n" + "=" * 60)
-        print(f"📊 FINAL RESULTS: {self.tests_passed}/{self.tests_run} tests passed")
+        print("📊 TEST SUMMARY")
+        print("=" * 60)
+        print(f"✅ Tests Passed: {self.tests_passed}")
+        print(f"❌ Tests Failed: {self.tests_run - self.tests_passed}")
+        print(f"📝 Total Tests: {self.tests_run}")
+        print(f"📊 Success Rate: {(self.tests_passed / self.tests_run * 100):.1f}%" if self.tests_run > 0 else "0.0%")
         
-        # Calculate success percentage
-        success_percentage = (self.tests_passed / self.tests_run * 100) if self.tests_run > 0 else 0
-        print(f"📈 Success Rate: {success_percentage:.1f}%")
+        # Show failed tests
+        failed_tests = [t for t in self.test_results if not t["passed"]]
+        if failed_tests:
+            print(f"\n❌ FAILED TESTS ({len(failed_tests)}):")
+            for test in failed_tests[:10]:  # Show first 10 failed tests
+                print(f"   • [{test['method']}] {test['endpoint']} - Expected: {test['expected_status']}, Got: {test['actual_status']}")
+                if test['error']:
+                    print(f"     Error: {test['error']}")
         
-        if success_percentage >= 80:
-            print("✅ Backend API Status: HEALTHY")
-            return 0
-        elif success_percentage >= 60:
-            print("⚠️  Backend API Status: PARTIAL - Some issues need attention")
-            return 1
-        else:
-            print("❌ Backend API Status: CRITICAL - Major issues found")
-            return 2
-
-def main():
-    """Main test execution"""
-    tester = CoveAPITester()
-    return tester.run_all_tests()
+        # Key endpoints status
+        key_endpoints = [
+            "admin/analytics",
+            "users", 
+            "companies",
+            "roles",
+            "audit-logs",
+            "tickets",
+            "subscription-plans",
+            "search"
+        ]
+        
+        print(f"\n🔑 KEY ENDPOINTS STATUS:")
+        for endpoint in key_endpoints:
+            endpoint_tests = [t for t in self.test_results if endpoint in t["endpoint"]]
+            if endpoint_tests:
+                passed = sum(1 for t in endpoint_tests if t["passed"])
+                total = len(endpoint_tests)
+                status = "✅" if passed == total else "⚠️" if passed > 0 else "❌"
+                print(f"   {status} {endpoint}: {passed}/{total}")
+            else:
+                print(f"   ❓ {endpoint}: Not tested")
 
 if __name__ == "__main__":
-    sys.exit(main())
+    print("🔧 Cove Legal Tech - Backend API Test Suite")
+    print("Testing Super Admin Enhancement APIs")
+    
+    tester = CoveAPITester()
+    success_rate = tester.run_all_tests()
+    
+    # Exit with appropriate code
+    exit_code = 0 if success_rate >= 0.8 else 1  # 80% success threshold
+    sys.exit(exit_code)
