@@ -487,7 +487,7 @@ async def create_company(company_data: CompanyCreate):
     doc['compliance_score'] = company.compliance_score
     
     await db.companies.insert_one(doc)
-    await create_activity_notification("company", "New Company Registered", f"{company.name} has joined the platform", f"/admin?tab=organizations")
+    await create_activity_notification("company", "New Company Registered", f"{company.name} has joined the platform", "/admin?tab=organizations")
     return company
 
 @api_router.get("/companies", response_model=List[Company])
