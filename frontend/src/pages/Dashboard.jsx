@@ -96,14 +96,6 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  useEffect(() => {
-    if (companyId) {
-      fetchDashboardData();
-    } else {
-      fetchDemoData();
-    }
-  }, [companyId]);
-
   const fetchDashboardData = async () => {
     try {
       const response = await axios.get(`${API}/dashboard/stats/${companyId}`);
