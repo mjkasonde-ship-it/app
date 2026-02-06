@@ -287,6 +287,13 @@ class TicketMessageCreate(BaseModel):
     message: str
     is_internal: bool = False
 
+class SubscriptionPlanCreate(BaseModel):
+    name: str
+    price: float
+    features: List[str]
+    user_limit: int
+    storage_limit_gb: int
+
 class AISummaryRequest(BaseModel):
     statute: str
     obligation: str
