@@ -61,6 +61,10 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
 - [x] Category Overview horizontal stacked bar chart
 - [x] Upcoming Deadlines sticky sidebar with countdown badges
 - [x] Enhanced backend /api/dashboard/stats/{company_id} with trend_data and severity_breakdown
+- [x] Interactive tooltips with contextual insights on all charts:
+  - Trend tooltip: Month label, score %, tasks completed, performance insight
+  - Severity tooltip: Priority level, obligations count, portfolio share %, action recommendation
+  - Category tooltip: Completed/remaining counts, progress %, status assessment
 
 ## API Endpoints
 
