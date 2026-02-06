@@ -271,10 +271,28 @@ class SystemSettings(BaseModel):
     mfa_required_roles: List[str] = []
     backup_frequency: str = "daily"
 
-class AISummaryRequest(BaseModel):
-    statute: str
-    obligation: str
-    action_required: str
+class BulkUserAction(BaseModel):
+    action: str
+    user_ids: List[str]
+
+class RoleCreate(BaseModel):
+    name: str
+    display_name: str
+    description: str
+    permissions: List[str]
+
+class TicketMessageCreate(BaseModel):
+    sender_id: str
+    sender_name: str
+    message: str
+    is_internal: bool = False
+
+class SubscriptionPlanCreate(BaseModel):
+    name: str
+    price: float
+    features: List[str]
+    user_limit: int
+    storage_limit_gb: int
 
 class AISummaryResponse(BaseModel):
     summary: str
