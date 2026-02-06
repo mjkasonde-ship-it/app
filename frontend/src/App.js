@@ -69,13 +69,17 @@ const DemoModal = ({ isOpen, onClose, onGetStarted }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
+  // Reset slide when modal closes
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
       setCurrentSlide(0);
-      return;
+      setIsAutoPlaying(true);
     }
-    
-    if (!isAutoPlaying) return;
+  }, [isOpen]);
+
+  // Auto-play slides
+  useEffect(() => {
+    if (!isOpen || !isAutoPlaying) return;
     
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % DEMO_SLIDES.length);
