@@ -643,14 +643,6 @@ MOCK_OBLIGATIONS = {
         ]
     }
 }
-        "Renewable Energy": [
-            {"statute": "Renewable Energy Feed-in Tariff Policy 2017", "obligation": "REFiT Registration", "action_required": "Register renewable energy project", "due_date": "2026-02-28", "severity": "high", "category": "Core Operations", "penalty": "Tariff exclusion", "frequency": "Per project", "responsible_authority": "ERB"},
-        ],
-        "Transmission": [
-            {"statute": "Energy Regulation Act No. 12 of 2019", "obligation": "Transmission License", "action_required": "Submit transmission capacity report", "due_date": "2026-05-31", "severity": "critical", "category": "Core Operations", "penalty": "Operating restrictions", "frequency": "Annual", "responsible_authority": "ERB"},
-        ]
-    }
-}
 
 # Default Roles
 DEFAULT_ROLES = [
