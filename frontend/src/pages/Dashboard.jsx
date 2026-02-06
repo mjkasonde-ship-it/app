@@ -349,6 +349,12 @@ export default function Dashboard() {
     fill: CATEGORY_COLORS[name]?.accent || "#64748b"
   })) : [];
 
+  // Prepare severity data with total for tooltip percentages
+  const severityDataWithTotal = stats?.severity_breakdown?.map(item => ({
+    ...item,
+    total: stats.total_obligations
+  })) || [];
+
   // Radial chart data for compliance score
   const complianceRadialData = stats ? [
     { name: 'Score', value: stats.compliance_score, fill: '#10b981' }
