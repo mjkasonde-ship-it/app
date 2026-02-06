@@ -855,7 +855,7 @@ export default function Dashboard() {
                           tick={{ fill: '#475569', fontSize: 12 }}
                           width={110}
                         />
-                        <Tooltip content={<CustomTooltip />} />
+                        <Tooltip content={<CategoryTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }} />
                         <Bar dataKey="completed" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} name="Completed" />
                         <Bar dataKey="value" stackId="a" fill="#e2e8f0" radius={[0, 4, 4, 0]} name="Remaining" />
                       </BarChart>
