@@ -163,6 +163,15 @@ export default function Dashboard() {
     ]
   });
 
+  useEffect(() => {
+    if (companyId) {
+      fetchDashboardData();
+    } else {
+      fetchDemoData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyId]);
+
   const getSeverityBadge = (severity) => {
     const styles = {
       critical: "bg-red-100 text-red-800 border-red-200",
