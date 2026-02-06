@@ -740,7 +740,7 @@ export default function Dashboard() {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={stats?.severity_breakdown || []}
+                        data={severityDataWithTotal}
                         cx="50%"
                         cy="50%"
                         innerRadius={50}
@@ -748,7 +748,7 @@ export default function Dashboard() {
                         paddingAngle={4}
                         dataKey="value"
                       >
-                        {(stats?.severity_breakdown || []).map((entry, index) => (
+                        {severityDataWithTotal.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.fill} />
                         ))}
                       </Pie>
