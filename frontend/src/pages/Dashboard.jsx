@@ -746,7 +746,7 @@ export default function Dashboard() {
                           <Cell key={`cell-${index}`} fill={entry.fill} />
                         ))}
                       </Pie>
-                      <Tooltip content={<CustomTooltip />} />
+                      <Tooltip content={<SeverityTooltip />} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
