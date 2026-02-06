@@ -751,8 +751,8 @@ async def get_roles():
     return roles
 
 @api_router.post("/roles")
-async def create_role(name: str, display_name: str, description: str, permissions: List[str]):
-    role = Role(name=name, display_name=display_name, description=description, permissions=permissions)
+async def create_role(role_data: RoleCreate):
+    role = Role(name=role_data.name, display_name=role_data.display_name, description=role_data.description, permissions=role_data.permissions)
     doc = role.model_dump()
     doc['created_at'] = doc['created_at'].isoformat()
     await db.roles.insert_one(doc)
