@@ -1,0 +1,145 @@
+{
+  "brand_identity": {
+    "name": "Cove",
+    "logo_url": "https://customer-assets.emergentagent.com/job_lusaka-legal-tech/artifacts/xxn68wwl_Cove%20Premium%20Logo.png",
+    "primary_metaphor": "The Gold Shield - Protection, Value, Solidity",
+    "emotional_tone": "Authoritative, Secure, Premium, Zambian Heritage"
+  },
+  "typography": {
+    "font_family": {
+      "heading": "Playfair Display, serif",
+      "body": "Inter, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "scale": {
+      "h1": "text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight",
+      "h2": "text-3xl md:text-4xl font-semibold tracking-tight",
+      "h3": "text-2xl font-semibold tracking-normal",
+      "h4": "text-xl font-medium",
+      "body_lg": "text-lg leading-relaxed",
+      "body_base": "text-base leading-relaxed",
+      "body_sm": "text-sm leading-normal",
+      "caption": "text-xs font-medium uppercase tracking-wider text-muted-foreground"
+    }
+  },
+  "colors": {
+    "palette": {
+      "primary": {
+        "DEFAULT": "#0f172a",
+        "foreground": "#f8fafc",
+        "name": "Dark Slate"
+      },
+      "secondary": {
+        "DEFAULT": "#f8fafc",
+        "foreground": "#0f172a",
+        "name": "Marble"
+      },
+      "accent": {
+        "DEFAULT": "#d97706",
+        "foreground": "#ffffff",
+        "name": "Metallic Copper"
+      },
+      "emerald": {
+        "DEFAULT": "#059669",
+        "light": "#d1fae5",
+        "name": "Zambian Emerald"
+      },
+      "cobalt": {
+        "DEFAULT": "#1e40af",
+        "light": "#e0f2fe",
+        "name": "Cobalt Blue"
+      },
+      "status": {
+        "critical": "#dc2626",
+        "high": "#eab308",
+        "medium": "#f97316",
+        "low": "#059669"
+      }
+    },
+    "gradients": {
+      "dashboard_header": "bg-gradient-to-r from-slate-900 to-slate-800",
+      "copper_sheen": "bg-gradient-to-br from-amber-600 to-amber-700",
+      "emerald_glow": "bg-gradient-to-br from-emerald-600 to-emerald-700"
+    }
+  },
+  "layout_strategies": {
+    "general": {
+      "spacing": "Generous. Use p-6 or p-8 for card interiors. Gap-6 for grids.",
+      "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+      "radius": "rounded-xl (12px)"
+    },
+    "onboarding": {
+      "type": "Split Screen",
+      "left_panel": "Fixed width (40%), Dark Slate bg with Mineral Texture overlay, testimonials/branding.",
+      "right_panel": "Scrollable, Clean Marble bg, centered multi-step form."
+    },
+    "dashboard": {
+      "type": "Bento Grid",
+      "grid_cols": "grid-cols-1 md:grid-cols-3 lg:grid-cols-4",
+      "gap": "gap-6",
+      "widgets": {
+        "summary": "col-span-1 bg-white shadow-sm border-t-4 border-emerald-600",
+        "chart_main": "col-span-2 row-span-2 bg-white shadow-sm",
+        "list_feed": "col-span-1 row-span-2 bg-white shadow-sm"
+      }
+    },
+    "compliance_matrix": {
+      "view": "Table / Gantt Toggle",
+      "table_style": "Sticky header, zebra striping (slate-50), distinctive status badges.",
+      "gantt_style": "Horizontal timeline, color-coded bars by severity."
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-slate-900 text-white hover:bg-slate-800 shadow-md rounded-xl h-10 px-6 font-medium transition-all",
+      "accent": "bg-amber-600 text-white hover:bg-amber-700 shadow-md rounded-xl h-10 px-6 font-medium transition-all",
+      "ghost": "hover:bg-slate-100 text-slate-700 rounded-xl h-10 px-4 font-medium"
+    },
+    "cards": {
+      "base": "bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-200 rounded-xl overflow-hidden",
+      "feature": "border-t-4 border-amber-600"
+    },
+    "badges": {
+      "critical": "bg-red-100 text-red-800 border border-red-200 px-2.5 py-0.5 rounded-full text-xs font-semibold",
+      "high": "bg-yellow-100 text-yellow-800 border border-yellow-200 px-2.5 py-0.5 rounded-full text-xs font-semibold",
+      "medium": "bg-orange-100 text-orange-800 border border-orange-200 px-2.5 py-0.5 rounded-full text-xs font-semibold",
+      "low": "bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs font-semibold"
+    },
+    "inputs": {
+      "base": "flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+    }
+  },
+  "assets": {
+    "logo": {
+      "url": "https://customer-assets.emergentagent.com/job_lusaka-legal-tech/artifacts/xxn68wwl_Cove%20Premium%20Logo.png",
+      "alt": "Cove Legal Tech"
+    },
+    "backgrounds": {
+      "login_texture": "https://images.unsplash.com/photo-1745701092460-47a5bf96e537?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNzl8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMGNvcHBlciUyMG1pbmVyYWwlMjB0ZXh0dXJlJTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3NzAzODgzOTF8MA&ixlib=rb-4.1.0&q=85",
+      "dashboard_texture": "Subtle noise/grain overlay on Slate backgrounds."
+    },
+    "imagery": {
+      "legal_team": "https://images.unsplash.com/photo-1742996111692-2d924f12a058?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NzR8MHwxfHNlYXJjaHwyfHxhZnJpY2FuJTIwbGVnYWwlMjBwcm9mZXNzaW9uYWxzJTIwbWVldGluZyUyMGNvcnBvcmF0ZXxlbnwwfHx8fDE3NzAzODgzOTB8MA&ixlib=rb-4.1.0&q=85",
+      "corporate_professional": "https://images.unsplash.com/photo-1604783125462-37d81c7385e6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NzR8MHwxfHNlYXJjaHwxfHxhZnJpY2FuJTIwbGVnYWwlMjBwcm9mZXNzaW9uYWxzJTIwbWVldGluZyUyMGNvcnBvcmF0ZXxlbnwwfHx8fDE3NzAzODgzOTB8MA&ixlib=rb-4.1.0&q=85"
+    }
+  },
+  "instructions_to_main_agent": [
+    "INSTALL: yarn add @phosphor-icons/react for professional/duotone icons.",
+    "INSTALL: yarn add framer-motion for smooth transitions.",
+    "SETUP: Update tailwind.config.js to include the custom colors (emerald, amber/copper, slate).",
+    "THEME: Default to Light Mode. Dark mode is optional/secondary.",
+    "FONTS: Import Playfair Display and Inter from Google Fonts in index.css.",
+    "CRITICAL: Do not use default Shadcn 'Card' without adding the custom border-t-4 styling for key metrics.",
+    "CRITICAL: All interactive elements must have data-testid attributes.",
+    "NAVIGATION: Use a persistent Sidebar for the Admin Console, and a Top Navigation for the Corporate Dashboard.",
+    "AI SUMMARY: Use a sliding modal (Sheet) for the AI Legislative Summaries, not a centered popup, to allow reading while viewing the list."
+  ],
+  "universal_guidelines": [
+    "Every interaction needs micro-animations (hover lifts, scale).",
+    "Use 2-3x more spacing than feels comfortable. Padding is luxury.",
+    "Never use generic centered layouts. Use grids and asymmetry.",
+    "Glassmorphism: Use backdrop-blur-xl on sticky headers.",
+    "Shadows: Use layered shadows (shadow-sm + shadow-md) for depth.",
+    "Data-Test-IDs: Mandatory for all buttons, inputs, and links."
+  ]
+}
