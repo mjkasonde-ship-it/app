@@ -21,12 +21,255 @@ export const AppContext = {
   BACKEND_URL
 };
 
+// Demo Modal Component
+const DEMO_SLIDES = [
+  {
+    id: 1,
+    title: "Quick & Easy Onboarding",
+    description: "Get started in minutes with our guided 4-step onboarding. Simply enter your company details, select your sector, and we'll automatically load all relevant compliance obligations for your industry.",
+    image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80",
+    icon: Users,
+    features: ["Company profile setup", "Sector-specific regulations", "Automatic obligation loading"]
+  },
+  {
+    id: 2,
+    title: "Compliance Matrix & Timeline",
+    description: "View all your regulatory obligations in one place. Switch between table view for detailed information or Gantt chart for timeline visualization. Never miss a deadline again.",
+    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80",
+    icon: FileText,
+    features: ["Table view with filters", "Gantt timeline visualization", "Severity-based prioritization"]
+  },
+  {
+    id: 3,
+    title: "AI-Powered Legal Summaries",
+    description: "Complex legal jargon simplified. Our AI assistant, powered by Claude, provides plain-English explanations of statutes and obligations, verified by legal professionals.",
+    image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80",
+    icon: Shield,
+    features: ["Plain English explanations", "Key action points", "Lawyer-verified summaries"]
+  },
+  {
+    id: 4,
+    title: "Smart Alerts & Notifications",
+    description: "Stay ahead of deadlines with automated email reminders. Configure notification preferences and never face penalties for missed compliance deadlines.",
+    image: "https://images.unsplash.com/photo-1596526131083-e8c633c948d2?w=800&q=80",
+    icon: Bell,
+    features: ["Email deadline reminders", "Custom notification rules", "Critical alert escalation"]
+  },
+  {
+    id: 5,
+    title: "Powerful Analytics Dashboard",
+    description: "Track your compliance score, monitor progress across categories, and generate reports for stakeholders. Full visibility into your regulatory status at a glance.",
+    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80",
+    icon: BarChart3,
+    features: ["Compliance score tracking", "Category breakdowns", "Export-ready reports"]
+  }
+];
+
+const DemoModal = ({ isOpen, onClose, onGetStarted }) => {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setCurrentSlide(0);
+      return;
+    }
+    
+    if (!isAutoPlaying) return;
+    
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % DEMO_SLIDES.length);
+    }, 6000);
+    
+    return () => clearInterval(timer);
+  }, [isOpen, isAutoPlaying]);
+
+  const goToSlide = (index) => {
+    setCurrentSlide(index);
+    setIsAutoPlaying(false);
+  };
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % DEMO_SLIDES.length);
+    setIsAutoPlaying(false);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + DEMO_SLIDES.length) % DEMO_SLIDES.length);
+    setIsAutoPlaying(false);
+  };
+
+  if (!isOpen) return null;
+
+  const slide = DEMO_SLIDES[currentSlide];
+  const IconComponent = slide.icon;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm"
+        onClick={onClose}
+        data-testid="demo-modal-overlay"
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          transition={{ type: "spring", duration: 0.5 }}
+          className="relative w-full max-w-5xl bg-white rounded-2xl shadow-2xl overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+          data-testid="demo-modal"
+        >
+          {/* Close Button */}
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/90 hover:bg-white shadow-lg transition-all"
+            data-testid="demo-close-btn"
+          >
+            <X className="w-5 h-5 text-slate-600" />
+          </button>
+
+          <div className="grid lg:grid-cols-2">
+            {/* Image Side */}
+            <div className="relative h-64 lg:h-auto lg:min-h-[500px] bg-slate-900 overflow-hidden">
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={slide.id}
+                  src={slide.image}
+                  alt={slide.title}
+                  initial={{ opacity: 0, scale: 1.1 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.5 }}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              </AnimatePresence>
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent" />
+              
+              {/* Slide Counter */}
+              <div className="absolute bottom-6 left-6 flex items-center gap-2">
+                {DEMO_SLIDES.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => goToSlide(idx)}
+                    className={`h-1.5 rounded-full transition-all ${
+                      idx === currentSlide ? 'w-8 bg-white' : 'w-1.5 bg-white/50 hover:bg-white/70'
+                    }`}
+                    data-testid={`demo-slide-indicator-${idx}`}
+                  />
+                ))}
+              </div>
+
+              {/* Play/Pause indicator */}
+              <div className="absolute top-6 left-6">
+                <span className="px-3 py-1 bg-emerald-600 text-white text-xs font-semibold rounded-full">
+                  {currentSlide + 1} / {DEMO_SLIDES.length}
+                </span>
+              </div>
+            </div>
+
+            {/* Content Side */}
+            <div className="p-8 lg:p-10 flex flex-col">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={slide.id}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex-1"
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2.5 rounded-xl bg-emerald-100">
+                      <IconComponent className="w-6 h-6 text-emerald-600" />
+                    </div>
+                    <span className="text-sm font-semibold text-emerald-600 uppercase tracking-wide">
+                      Feature {currentSlide + 1}
+                    </span>
+                  </div>
+                  
+                  <h3 className="font-heading text-2xl lg:text-3xl font-bold text-slate-900 mb-4">
+                    {slide.title}
+                  </h3>
+                  
+                  <p className="text-slate-600 text-lg leading-relaxed mb-6">
+                    {slide.description}
+                  </p>
+                  
+                  <ul className="space-y-3 mb-8">
+                    {slide.features.map((feature, idx) => (
+                      <motion.li
+                        key={idx}
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.1 }}
+                        className="flex items-center gap-3 text-slate-700"
+                      >
+                        <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                        {feature}
+                      </motion.li>
+                    ))}
+                  </ul>
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Navigation */}
+              <div className="flex items-center justify-between pt-6 border-t border-slate-200">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={prevSlide}
+                    className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
+                    data-testid="demo-prev-btn"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-slate-600" />
+                  </button>
+                  <button
+                    onClick={nextSlide}
+                    className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
+                    data-testid="demo-next-btn"
+                  >
+                    <ChevronRight className="w-5 h-5 text-slate-600" />
+                  </button>
+                </div>
+                
+                <button
+                  onClick={onGetStarted}
+                  className="px-6 py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all hover:-translate-y-0.5 shadow-lg shadow-emerald-600/25"
+                  data-testid="demo-get-started-btn"
+                >
+                  Start Free Trial
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
 // Landing Page
 const LandingPage = () => {
   const navigate = useNavigate();
+  const [showDemoModal, setShowDemoModal] = useState(false);
+  
+  const handleGetStarted = () => {
+    setShowDemoModal(false);
+    navigate('/onboarding');
+  };
   
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Demo Modal */}
+      <DemoModal 
+        isOpen={showDemoModal} 
+        onClose={() => setShowDemoModal(false)}
+        onGetStarted={handleGetStarted}
+      />
+      
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
