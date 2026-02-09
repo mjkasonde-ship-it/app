@@ -556,14 +556,115 @@ export default function ComplianceMatrix() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              <Card className="border-slate-200/60 shadow-sm" data-testid="compliance-table">
+              {/* Bulk Action Bar */}
+              <AnimatePresence>
+                {selectedIds.size > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between gap-4 rounded-t-lg"
+                    data-testid="bulk-action-bar"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <CheckSquare className="w-4 h-4 text-emerald-400" />
+                        <span className="font-medium">{selectedIds.size} selected</span>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-slate-300 hover:text-white hover:bg-slate-800 h-7"
+                        onClick={clearSelection}
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-slate-400 hidden sm:inline">Set status:</span>
+                      <Button 
+                        size="sm" 
+                        variant="secondary"
+                        className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+                        onClick={() => handleBulkStatusUpdate('completed')}
+                        disabled={bulkUpdating}
+                        data-testid="bulk-complete-btn"
+                      >
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        Complete
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="secondary"
+                        className="h-8 bg-blue-600 hover:bg-blue-700 text-white gap-1.5"
+                        onClick={() => handleBulkStatusUpdate('in_progress')}
+                        disabled={bulkUpdating}
+                        data-testid="bulk-progress-btn"
+                      >
+                        <CircleDot className="w-3.5 h-3.5" />
+                        In Progress
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="secondary"
+                        className="h-8 bg-amber-600 hover:bg-amber-700 text-white gap-1.5 hidden sm:flex"
+                        onClick={() => handleBulkStatusUpdate('pending')}
+                        disabled={bulkUpdating}
+                        data-testid="bulk-pending-btn"
+                      >
+                        <Clock className="w-3.5 h-3.5" />
+                        Pending
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-8 text-slate-300 hover:text-white hover:bg-slate-800"
+                            disabled={bulkUpdating}
+                          >
+                            <ChevronDown className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>More Actions</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuCheckboxItem 
+                            onClick={() => handleBulkStatusUpdate('pending')}
+                            className="sm:hidden"
+                          >
+                            Set Pending
+                          </DropdownMenuCheckboxItem>
+                          <DropdownMenuCheckboxItem onClick={() => handleBulkStatusUpdate('non_compliant')}>
+                            Set Non-Compliant
+                          </DropdownMenuCheckboxItem>
+                          <DropdownMenuCheckboxItem onClick={() => handleBulkStatusUpdate('overdue')}>
+                            Set Overdue
+                          </DropdownMenuCheckboxItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <Card className={`border-slate-200/60 shadow-sm ${selectedIds.size > 0 ? 'rounded-t-none' : ''}`} data-testid="compliance-table">
                 <CardContent className="p-0">
                   <ScrollArea className="h-[calc(100vh-220px)]">
                     <Table>
                       <TableHeader className="sticky top-0 bg-slate-50/95 backdrop-blur-sm z-10">
                         <TableRow className="hover:bg-slate-50/95">
+                          {/* Select All Checkbox */}
+                          <TableHead className="w-[50px] pr-0">
+                            <Checkbox 
+                              checked={isAllSelected}
+                              onCheckedChange={toggleSelectAll}
+                              className={`${isSomeSelected ? 'data-[state=checked]:bg-slate-600' : ''}`}
+                              data-testid="select-all-checkbox"
+                            />
+                          </TableHead>
                           {visibleColumns.legislation && (
-                            <TableHead className="font-medium text-slate-700 text-xs uppercase tracking-wide w-[280px]">
+                            <TableHead className="font-medium text-slate-700 text-xs uppercase tracking-wide w-[260px]">
                               Legislation
                             </TableHead>
                           )}
@@ -601,13 +702,26 @@ export default function ComplianceMatrix() {
                           const severityConfig = getSeverityConfig(obl.severity);
                           const OwnerIcon = getOwnerIcon(obl.owner);
                           const daysUntil = getDaysUntil(obl.due_date);
+                          const isSelected = selectedIds.has(obl.id);
                           
                           return (
                             <TableRow 
                               key={obl.id} 
                               className={`group hover:bg-slate-50/80 transition-colors ${
+                                isSelected ? 'bg-emerald-50/50' :
                                 obl.status === 'non_compliant' || obl.status === 'overdue' 
                                   ? 'bg-red-50/30' 
+                                  : ''
+                              }`}
+                              data-testid={`obligation-row-${idx}`}
+                            >
+                              {/* Row Checkbox */}
+                              <TableCell className="pr-0">
+                                <Checkbox 
+                                  checked={isSelected}
+                                  onCheckedChange={() => toggleSelectItem(obl.id)}
+                                  data-testid={`checkbox-${idx}`}
+                                />
                                   : ''
                               }`}
                               data-testid={`obligation-row-${idx}`}
