@@ -511,6 +511,10 @@ function App() {
           <Route path="/dashboard/:companyId" element={<Dashboard />} />
           <Route path="/compliance" element={<ComplianceMatrix />} />
           <Route path="/compliance/:companyId" element={<ComplianceMatrix />} />
+          <Route path="/vdr" element={<VDR />} />
+          <Route path="/vdr/:companyId" element={<VDR />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/settings/:companyId" element={<Settings />} />
           <Route path="/admin" element={<AdminConsole />} />
         </Routes>
       </BrowserRouter>
