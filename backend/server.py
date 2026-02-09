@@ -839,6 +839,31 @@ async def update_obligation_status(obligation_id: str, status: str):
         raise HTTPException(status_code=404, detail="Obligation not found")
     return {"message": "Status updated", "status": status}
 
+# Bulk Status Update
+class BulkStatusUpdate(BaseModel):
+    obligation_ids: List[str]
+    status: str
+
+@api_router.post("/obligations/bulk-status")
+async def bulk_update_obligation_status(request: BulkStatusUpdate):
+    if not request.obligation_ids:
+        raise HTTPException(status_code=400, detail="No obligation IDs provided")
+    
+    valid_statuses = ["pending", "in_progress", "completed", "non_compliant", "overdue"]
+    if request.status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid_statuses}")
+    
+    result = await db.obligations.update_many(
+        {"id": {"$in": request.obligation_ids}},
+        {"$set": {"status": request.status}}
+    )
+    
+    return {
+        "message": f"Updated {result.modified_count} obligations",
+        "updated_count": result.modified_count,
+        "status": request.status
+    }
+
 # Sectors
 @api_router.get("/sectors")
 async def get_sectors():
