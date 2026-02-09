@@ -423,9 +423,23 @@ export default function Dashboard() {
                 <FolderOpen className="w-4 h-4" />
                 My Cove
               </Button>
-              <Button variant="ghost" className="gap-2 text-cove-navy hover:bg-[#FFF1E5]" data-testid="nav-calendar">
+              <Button 
+                variant="ghost" 
+                className="gap-2 text-cove-navy hover:bg-[#FFF1E5]"
+                onClick={() => navigate(`/calendar/${companyId || ''}`)}
+                data-testid="nav-calendar"
+              >
                 <Calendar className="w-4 h-4" />
                 Calendar
+              </Button>
+              <Button 
+                variant="ghost" 
+                className="gap-2 text-cove-navy hover:bg-[#FFF1E5]"
+                onClick={() => navigate(`/reports/${companyId || ''}`)}
+                data-testid="nav-reports"
+              >
+                <FileBarChart className="w-4 h-4" />
+                Reports
               </Button>
             </nav>
 
@@ -485,9 +499,21 @@ export default function Dashboard() {
               <FolderOpen className="w-4 h-4" />
               My Cove
             </Button>
-            <Button variant="ghost" className="w-full justify-start gap-2 hover:bg-white/50" onClick={() => setMobileMenuOpen(false)}>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start gap-2 hover:bg-white/50"
+              onClick={() => { setMobileMenuOpen(false); navigate(`/calendar/${companyId || ''}`); }}
+            >
               <Calendar className="w-4 h-4" />
               Calendar
+            </Button>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start gap-2 hover:bg-white/50"
+              onClick={() => { setMobileMenuOpen(false); navigate(`/reports/${companyId || ''}`); }}
+            >
+              <FileBarChart className="w-4 h-4" />
+              Reports
             </Button>
             <Button variant="ghost" className="w-full justify-start gap-2 hover:bg-white/50" onClick={() => { setMobileMenuOpen(false); navigate(`/settings/${companyId || ''}`); }}>
               <Settings className="w-4 h-4" />
