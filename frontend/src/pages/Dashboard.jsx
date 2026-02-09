@@ -442,6 +442,15 @@ export default function Dashboard() {
                 <FileBarChart className="w-4 h-4" />
                 Reports
               </Button>
+              <Button 
+                variant="ghost" 
+                className="gap-2 text-cove-navy hover:bg-[#FFF1E5]"
+                onClick={() => navigate(`/forms/${companyId || ''}`)}
+                data-testid="nav-forms"
+              >
+                <FileStack className="w-4 h-4" />
+                Forms
+              </Button>
             </nav>
 
             <div className="flex items-center gap-2">
