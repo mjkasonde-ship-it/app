@@ -23,7 +23,9 @@ import {
   ArrowUpRight,
   Shield,
   Target,
-  Activity
+  Activity,
+  FolderOpen,
+  Users
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { Progress } from "../components/ui/progress";
@@ -48,6 +50,9 @@ import {
   RadialBar,
   Legend
 } from "recharts";
+
+// New Cove logo URL
+const COVE_LOGO = "https://customer-assets.emergentagent.com/job_ede56879-e7c8-4696-b14b-f3e4205ad2d7/artifacts/vpnavke8_Cove%20clean%20logo.png";
 
 const API = process.env.REACT_APP_BACKEND_URL + "/api";
 
