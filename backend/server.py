@@ -804,7 +804,13 @@ async def delete_company(company_id: str):
 
 # Obligations Routes
 @api_router.get("/obligations")
-async def get_all_obligations(company_id: Optional[str] = None, category: Optional[str] = None, severity: Optional[str] = None):
+async def get_all_obligations(
+    company_id: Optional[str] = None, 
+    category: Optional[str] = None, 
+    severity: Optional[str] = None,
+    status: Optional[str] = None,
+    owner: Optional[str] = None
+):
     query = {}
     if company_id:
         query["company_id"] = company_id
@@ -812,6 +818,10 @@ async def get_all_obligations(company_id: Optional[str] = None, category: Option
         query["category"] = category
     if severity:
         query["severity"] = severity
+    if status:
+        query["status"] = status
+    if owner:
+        query["owner"] = owner
     obligations = await db.obligations.find(query, {"_id": 0}).to_list(1000)
     return obligations
 
