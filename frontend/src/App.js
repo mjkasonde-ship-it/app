@@ -269,7 +269,7 @@ const LandingPage = () => {
   };
   
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-ft-salmon">
       {/* Demo Modal */}
       <DemoModal 
         isOpen={showDemoModal} 
@@ -278,32 +278,33 @@ const LandingPage = () => {
       />
       
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-slate-200">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-[#E8D5C4]">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img 
-              src="https://customer-assets.emergentagent.com/job_lusaka-legal-tech/artifacts/xxn68wwl_Cove%20Premium%20Logo.png" 
+              src={COVE_LOGO}
               alt="Cove" 
-              className="h-24"
+              className="h-16"
               data-testid="cove-logo"
             />
           </div>
           <nav className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">Features</a>
-            <a href="#sectors" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">Sectors</a>
-            <a href="#about" className="text-slate-600 hover:text-slate-900 font-medium transition-colors">About</a>
+            <a href="#features" className="text-cove-navy hover:text-cove-teal font-medium transition-colors">Features</a>
+            <a href="#sectors" className="text-cove-navy hover:text-cove-teal font-medium transition-colors">Sectors</a>
+            <a href="#about" className="text-cove-navy hover:text-cove-teal font-medium transition-colors">About</a>
           </nav>
           <div className="flex items-center gap-4">
             <button 
               onClick={() => navigate('/admin')}
-              className="text-slate-600 hover:text-slate-900 font-medium transition-colors"
+              className="text-cove-navy hover:text-cove-teal font-medium transition-colors"
               data-testid="admin-link"
             >
               Admin
             </button>
             <button 
               onClick={() => navigate('/onboarding')}
-              className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-slate-800 transition-all hover:-translate-y-0.5"
+              className="text-white px-6 py-2.5 rounded-xl font-medium hover:opacity-90 transition-all hover:-translate-y-0.5"
+              style={{backgroundColor: 'hsl(193, 55%, 45%)'}}
               data-testid="get-started-btn"
             >
               Get Started
@@ -321,26 +322,27 @@ const LandingPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <span className="inline-block px-4 py-1.5 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold mb-6">
+              <span className="inline-block px-4 py-1.5 rounded-full text-sm font-semibold mb-6" style={{backgroundColor: 'hsl(193, 55%, 90%)', color: 'hsl(193, 55%, 35%)'}}>
                 Zambia&apos;s Leading Compliance Platform
               </span>
-              <h1 className="font-heading text-5xl lg:text-6xl font-bold text-slate-900 leading-tight mb-6">
-                Simplify Your <span className="text-emerald-600">Legal Compliance</span>
+              <h1 className="font-heading text-5xl lg:text-6xl font-bold text-cove-navy leading-tight mb-6">
+                Simplify Your <span className="text-cove-teal">Legal Compliance</span>
               </h1>
-              <p className="text-xl text-slate-600 leading-relaxed mb-8">
+              <p className="text-xl text-[#6B5B4F] leading-relaxed mb-8">
                 Navigate Zambian regulatory requirements with confidence. Cove helps businesses track obligations, meet deadlines, and maintain compliance across all sectors.
               </p>
               <div className="flex flex-wrap gap-4">
                 <button 
                   onClick={() => navigate('/onboarding')}
-                  className="bg-amber-600 text-white px-8 py-3.5 rounded-xl font-semibold hover:bg-amber-700 transition-all hover:-translate-y-0.5 shadow-lg shadow-amber-600/25"
+                  className="text-white px-8 py-3.5 rounded-xl font-semibold hover:opacity-90 transition-all hover:-translate-y-0.5 shadow-lg"
+                  style={{backgroundColor: 'hsl(193, 55%, 45%)'}}
                   data-testid="hero-cta-btn"
                 >
                   Start Free Trial
                 </button>
                 <button 
                   onClick={() => setShowDemoModal(true)}
-                  className="flex items-center gap-2 border-2 border-slate-300 text-slate-700 px-8 py-3.5 rounded-xl font-semibold hover:border-slate-400 hover:bg-slate-50 transition-all"
+                  className="flex items-center gap-2 border-2 border-[#D4C4B5] text-cove-navy px-8 py-3.5 rounded-xl font-semibold hover:border-cove-teal hover:bg-white transition-all"
                   data-testid="watch-demo-btn"
                 >
                   <Play className="w-5 h-5" />
@@ -361,14 +363,14 @@ const LandingPage = () => {
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-xl shadow-xl">
+              <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-xl shadow-xl border border-[#E8D5C4]">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center">
-                    <span className="text-2xl font-bold text-emerald-600">98%</span>
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{backgroundColor: 'hsl(193, 55%, 90%)'}}>
+                    <span className="text-2xl font-bold text-cove-teal">98%</span>
                   </div>
                   <div>
-                    <p className="font-semibold text-slate-900">Compliance Rate</p>
-                    <p className="text-sm text-slate-500">Across our clients</p>
+                    <p className="font-semibold text-cove-navy">Compliance Rate</p>
+                    <p className="text-sm text-[#6B5B4F]">Across our clients</p>
                   </div>
                 </div>
               </div>
@@ -381,10 +383,10 @@ const LandingPage = () => {
       <section id="features" className="py-20 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="font-heading text-4xl font-bold text-slate-900 mb-4">
+            <h2 className="font-heading text-4xl font-bold text-cove-navy mb-4">
               Everything You Need for Compliance
             </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            <p className="text-lg text-[#6B5B4F] max-w-2xl mx-auto">
               Comprehensive tools designed specifically for Zambian businesses
             </p>
           </div>
@@ -392,10 +394,10 @@ const LandingPage = () => {
             {[
               { title: "Compliance Matrix", desc: "Track all your regulatory obligations in one place with smart deadlines", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" },
               { title: "AI Summaries", desc: "Get plain-English explanations of complex legal requirements", icon: "M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" },
-              { title: "Gantt Timeline", desc: "Visualize your compliance calendar with interactive timelines", icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
-              { title: "Email Alerts", desc: "Never miss a deadline with automated reminders", icon: "M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" },
+              { title: "My Cove VDR", desc: "Secure document repository with auto-compliance tracking", icon: "M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" },
+              { title: "Team & RBAC", desc: "Invite team members and assign role-based permissions", icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" },
               { title: "Multi-Sector", desc: "Covers mining, construction, finance, agriculture and more", icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" },
-              { title: "Super Admin", desc: "Full control for law firms managing multiple clients", icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" },
+              { title: "Super Admin", desc: "Full control for law firms managing multiple clients", icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" },
             ].map((feature, idx) => (
               <motion.div 
                 key={idx}
@@ -403,15 +405,15 @@ const LandingPage = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: idx * 0.1 }}
                 viewport={{ once: true }}
-                className="bg-slate-50 p-8 rounded-2xl hover:shadow-lg transition-shadow group"
+                className="bg-[#FFF8F2] p-8 rounded-2xl hover:shadow-lg transition-shadow group border border-[#E8D5C4]"
               >
-                <div className="w-14 h-14 bg-emerald-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-emerald-600 transition-colors">
-                  <svg className="w-7 h-7 text-emerald-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-6 transition-colors" style={{backgroundColor: 'hsl(193, 55%, 90%)'}}>
+                  <svg className="w-7 h-7 text-cove-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={feature.icon} />
                   </svg>
                 </div>
-                <h3 className="font-heading text-xl font-semibold text-slate-900 mb-3">{feature.title}</h3>
-                <p className="text-slate-600">{feature.desc}</p>
+                <h3 className="font-heading text-xl font-semibold text-cove-navy mb-3">{feature.title}</h3>
+                <p className="text-[#6B5B4F]">{feature.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -419,13 +421,13 @@ const LandingPage = () => {
       </section>
 
       {/* Sectors Section */}
-      <section id="sectors" className="py-20 px-6 bg-slate-900">
+      <section id="sectors" className="py-20 px-6" style={{backgroundColor: 'hsl(210, 60%, 25%)'}}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="font-heading text-4xl font-bold text-white mb-4">
               Built for Zambian Industries
             </h2>
-            <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
               Tailored compliance frameworks for every sector
             </p>
           </div>
@@ -444,10 +446,11 @@ const LandingPage = () => {
                 whileInView={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3, delay: idx * 0.05 }}
                 viewport={{ once: true }}
-                className="bg-slate-800 p-6 rounded-xl hover:bg-slate-700 transition-colors text-center group cursor-pointer"
+                className="p-6 rounded-xl hover:bg-white/10 transition-colors text-center group cursor-pointer"
+                style={{backgroundColor: 'rgba(255,255,255,0.05)'}}
               >
-                <div className="w-12 h-12 mx-auto mb-4 bg-amber-600/20 rounded-lg flex items-center justify-center group-hover:bg-amber-600 transition-colors">
-                  <svg className="w-6 h-6 text-amber-500 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-12 h-12 mx-auto mb-4 rounded-lg flex items-center justify-center transition-colors" style={{backgroundColor: 'hsl(193, 55%, 45%, 0.2)'}}>
+                  <svg className="w-6 h-6 text-cove-teal group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{color: 'hsl(193, 55%, 60%)'}}>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={sector.icon} />
                   </svg>
                 </div>
@@ -459,17 +462,17 @@ const LandingPage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-6 bg-gradient-to-br from-emerald-600 to-emerald-700">
+      <section className="py-20 px-6" style={{background: 'linear-gradient(135deg, hsl(193, 55%, 45%) 0%, hsl(210, 60%, 30%) 100%)'}}>
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="font-heading text-4xl font-bold text-white mb-6">
             Ready to Simplify Your Compliance?
           </h2>
-          <p className="text-xl text-emerald-100 mb-8">
+          <p className="text-xl text-white/80 mb-8">
             Join leading Zambian businesses using Cove to stay compliant
           </p>
           <button 
             onClick={() => navigate('/onboarding')}
-            className="bg-white text-emerald-700 px-10 py-4 rounded-xl font-semibold hover:bg-emerald-50 transition-all hover:-translate-y-0.5 shadow-xl"
+            className="bg-white text-cove-teal px-10 py-4 rounded-xl font-semibold hover:bg-opacity-90 transition-all hover:-translate-y-0.5 shadow-xl"
             data-testid="cta-get-started-btn"
           >
             Get Started Today
@@ -478,13 +481,13 @@ const LandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-6 bg-slate-900">
+      <footer className="py-12 px-6" style={{backgroundColor: 'hsl(210, 60%, 20%)'}}>
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <img 
-              src="https://customer-assets.emergentagent.com/job_lusaka-legal-tech/artifacts/xxn68wwl_Cove%20Premium%20Logo.png" 
+              src={COVE_LOGO}
               alt="Cove" 
-              className="h-20 brightness-200"
+              className="h-16 brightness-200"
             />
             <p className="text-slate-400 text-sm">
               2026 Cove Legal Tech. Built for Zambian businesses.
