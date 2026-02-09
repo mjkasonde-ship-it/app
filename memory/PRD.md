@@ -84,6 +84,21 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
   - Backend POST /api/obligations/bulk-status endpoint
   - Selection auto-clears after successful update
   - Toast notifications for update results
+- [x] **Mark Overdue Automation:**
+  - "Mark Overdue" button in toolbar
+  - Backend POST /api/obligations/mark-overdue endpoint
+  - Automatically flags obligations past due date as overdue
+  - Refreshes list after marking
+- [x] **Export Functionality:**
+  - Export dropdown with Excel/PDF options
+  - Excel export using xlsx library with auto-sized columns
+  - PDF export using jspdf + jspdf-autotable with:
+    - Cove branding header
+    - Summary statistics (completed, pending, overdue, critical)
+    - Striped table with color-coded status cells
+    - Page numbers and footer
+  - Both exports respect current filters
+  - Toast notifications on successful download
 
 ## API Endpoints
 
@@ -95,6 +110,8 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
 - `GET /api/obligations/{id}` - Single obligation details
 - `PATCH /api/obligations/{id}/status` - Update single obligation status
 - `POST /api/obligations/bulk-status` - Bulk update multiple obligations status
+- `POST /api/obligations/mark-overdue` - Auto-mark past due obligations as overdue
+- `GET /api/obligations/export` - Export obligations data
 - `POST /api/ai/summary` - Generate AI legal summary
 - `GET /api/dashboard/stats/{company_id}` - Dashboard stats with charts data
 - `GET /api/legislation/{sector}/{sub_sector}` - Get legislation with computed fields
