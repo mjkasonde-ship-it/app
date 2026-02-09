@@ -284,7 +284,7 @@ const LandingPage = () => {
             <img 
               src={COVE_LOGO}
               alt="Cove" 
-              className="h-16"
+              className="h-32"
               data-testid="cove-logo"
             />
           </div>
