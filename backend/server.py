@@ -145,6 +145,47 @@ class UserUpdate(BaseModel):
     status: Optional[str] = None
     mfa_enabled: Optional[bool] = None
 
+# VDR Models
+class VDRFile(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    folder: str  # corporate, legal, hr, operations
+    company_id: Optional[str] = None
+    size: int = 0
+    mime_type: Optional[str] = None
+    uploaded_by: str
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    version: int = 1
+    linked_obligation_id: Optional[str] = None
+    linked_obligation: Optional[str] = None
+    file_path: Optional[str] = None
+    versions: List[Dict[str, Any]] = []
+
+class VDRFileCreate(BaseModel):
+    name: str
+    folder: str
+    company_id: Optional[str] = None
+    size: int = 0
+    mime_type: Optional[str] = None
+    uploaded_by: str = "User"
+    linked_obligation_id: Optional[str] = None
+
+# Role and Permission Models
+class Permission(BaseModel):
+    id: str
+    name: str
+    description: str
+
+class Role(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: str
+    permissions: List[str] = []
+    company_id: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 class AuditLog(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
