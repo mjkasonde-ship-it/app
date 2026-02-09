@@ -80,27 +80,35 @@ class Obligation(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     category: str
     statute: str
+    provision: Optional[str] = None  # Specific section/article reference
+    legal_reference_url: Optional[str] = None  # URL to legal text
     obligation: str
     action_required: str
+    consequences: Optional[str] = None  # What happens if not complied
     due_date: str
     severity: str
     penalty: Optional[str] = None
     frequency: Optional[str] = None
     responsible_authority: Optional[str] = None
+    owner: str = "Legal"  # Owner department: Legal, HR, Finance, Operations, Compliance
     sector: str
     sub_sector: str
-    status: str = "pending"
+    status: str = "pending"  # pending, in_progress, completed, non_compliant, overdue
 
 class ObligationCreate(BaseModel):
     category: str
     statute: str
+    provision: Optional[str] = None
+    legal_reference_url: Optional[str] = None
     obligation: str
     action_required: str
+    consequences: Optional[str] = None
     due_date: str
     severity: str
     penalty: Optional[str] = None
     frequency: Optional[str] = None
     responsible_authority: Optional[str] = None
+    owner: str = "Legal"
     sector: str
     sub_sector: str
 
