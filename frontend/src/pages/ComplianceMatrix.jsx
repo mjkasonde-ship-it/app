@@ -722,10 +722,7 @@ export default function ComplianceMatrix() {
                                   onCheckedChange={() => toggleSelectItem(obl.id)}
                                   data-testid={`checkbox-${idx}`}
                                 />
-                                  : ''
-                              }`}
-                              data-testid={`obligation-row-${idx}`}
-                            >
+                              </TableCell>
                               {visibleColumns.legislation && (
                                 <TableCell className="py-3">
                                   <div className="flex items-start gap-2">
