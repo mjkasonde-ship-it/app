@@ -522,6 +522,8 @@ function App() {
           <Route path="/calendar/:companyId" element={<Calendar />} />
           <Route path="/reports" element={<ReportBuilder />} />
           <Route path="/reports/:companyId" element={<ReportBuilder />} />
+          <Route path="/forms" element={<FormsRepository />} />
+          <Route path="/forms/:companyId" element={<FormsRepository />} />
           <Route path="/admin" element={<AdminConsole />} />
         </Routes>
       </BrowserRouter>
