@@ -525,6 +525,14 @@ export default function Dashboard() {
               <FileBarChart className="w-4 h-4" />
               Reports
             </Button>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start gap-2 hover:bg-white/50"
+              onClick={() => { setMobileMenuOpen(false); navigate(`/forms/${companyId || ''}`); }}
+            >
+              <FileStack className="w-4 h-4" />
+              Forms
+            </Button>
             <Button variant="ghost" className="w-full justify-start gap-2 hover:bg-white/50" onClick={() => { setMobileMenuOpen(false); navigate(`/settings/${companyId || ''}`); }}>
               <Settings className="w-4 h-4" />
               Settings
