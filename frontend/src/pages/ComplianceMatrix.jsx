@@ -288,6 +288,87 @@ export default function ComplianceMatrix() {
     }
   };
 
+  // Batch selection handlers
+  const toggleSelectItem = (id) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredObligations.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredObligations.map(o => o.id)));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkStatusUpdate = async (newStatus) => {
+    if (selectedIds.size === 0) return;
+    
+    setBulkUpdating(true);
+    const idsArray = Array.from(selectedIds);
+    let successCount = 0;
+    let failCount = 0;
+
+    try {
+      // Try bulk endpoint first
+      const response = await axios.post(`${API}/obligations/bulk-status`, {
+        obligation_ids: idsArray,
+        status: newStatus
+      });
+      
+      if (response.data.updated_count) {
+        successCount = response.data.updated_count;
+      }
+    } catch (bulkError) {
+      // Fallback to individual updates if bulk endpoint doesn't exist
+      const updatePromises = idsArray.map(async (id) => {
+        try {
+          await axios.patch(`${API}/obligations/${id}/status`, null, {
+            params: { status: newStatus }
+          });
+          return { success: true, id };
+        } catch (error) {
+          return { success: false, id };
+        }
+      });
+
+      const results = await Promise.all(updatePromises);
+      successCount = results.filter(r => r.success).length;
+      failCount = results.filter(r => !r.success).length;
+    }
+
+    // Update local state
+    setObligations(prev => prev.map(o => 
+      selectedIds.has(o.id) ? { ...o, status: newStatus } : o
+    ));
+    
+    // Clear selection and show toast
+    setSelectedIds(new Set());
+    setBulkUpdating(false);
+    
+    const statusLabel = newStatus.replace('_', ' ');
+    if (failCount > 0) {
+      toast.warning(`Updated ${successCount} items to ${statusLabel}. ${failCount} failed.`);
+    } else {
+      toast.success(`Updated ${successCount} items to ${statusLabel}`);
+    }
+  };
+
+  const isAllSelected = filteredObligations.length > 0 && selectedIds.size === filteredObligations.length;
+  const isSomeSelected = selectedIds.size > 0 && selectedIds.size < filteredObligations.length;
+
   const toggleColumn = (columnId) => {
     setVisibleColumns(prev => ({ ...prev, [columnId]: !prev[columnId] }));
   };
