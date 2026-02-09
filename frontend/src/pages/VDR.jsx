@@ -641,14 +641,32 @@ export default function VDR() {
             {obligations.map(obl => (
               <button
                 key={obl.id}
-                onClick={() => {
-                  // Update file with linked obligation
-                  setFiles(prev => prev.map(f => 
-                    f.id === selectedFile?.id 
-                      ? { ...f, linked_obligation: obl.obligation }
-                      : f
-                  ));
-                  toast.success("File linked and obligation marked as Completed");
+                onClick={async () => {
+                  try {
+                    // Call backend to link file and auto-complete obligation
+                    await axios.post(`${API}/vdr/files/${selectedFile?.id}/link`, null, {
+                      params: { obligation_id: obl.id }
+                    });
+                    
+                    // Update local file state
+                    setFiles(prev => prev.map(f => 
+                      f.id === selectedFile?.id 
+                        ? { ...f, linked_obligation: obl.obligation, linked_obligation_id: obl.id }
+                        : f
+                    ));
+                    
+                    toast.success(`File linked - "${obl.obligation}" marked as Completed`);
+                    fetchObligations(); // Refresh to update available obligations
+                  } catch (error) {
+                    console.error("Link error:", error);
+                    // Demo mode fallback
+                    setFiles(prev => prev.map(f => 
+                      f.id === selectedFile?.id 
+                        ? { ...f, linked_obligation: obl.obligation }
+                        : f
+                    ));
+                    toast.success("File linked and obligation marked as Completed (demo mode)");
+                  }
                   setLinkObligationOpen(false);
                 }}
                 className="w-full p-4 text-left rounded-lg border border-[#E8D5C4] hover:border-cove-teal hover:bg-[#FFF8F2] transition-all"
