@@ -660,6 +660,40 @@ export default function ComplianceMatrix() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
+              {/* Export Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-9 gap-1.5" data-testid="export-btn">
+                    <Download className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Export</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel>Export Format</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleExportExcel} className="cursor-pointer" data-testid="export-excel-btn">
+                    <FileSpreadsheet className="w-4 h-4 mr-2 text-emerald-600" />
+                    Export to Excel
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportPDF} className="cursor-pointer" data-testid="export-pdf-btn">
+                    <FileText className="w-4 h-4 mr-2 text-red-600" />
+                    Export to PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Mark Overdue Button */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-9 gap-1.5 text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700"
+                onClick={handleMarkOverdue}
+                data-testid="mark-overdue-btn"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Mark Overdue</span>
+              </Button>
+
               {/* View Toggle */}
               <div className="flex border rounded-lg overflow-hidden">
                 <Button
