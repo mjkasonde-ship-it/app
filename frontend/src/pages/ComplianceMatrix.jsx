@@ -122,10 +122,19 @@ export default function ComplianceMatrix() {
   const [visibleColumns, setVisibleColumns] = useState(
     COLUMNS.reduce((acc, col) => ({ ...acc, [col.id]: col.default }), {})
   );
+  
+  // Batch selection state
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkUpdating, setBulkUpdating] = useState(false);
 
   useEffect(() => {
     fetchObligations();
   }, [companyId, categoryFilter]);
+
+  // Clear selection when filters change
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [statusFilter, ownerFilter, searchQuery]);
 
   const fetchObligations = async () => {
     setLoading(true);
