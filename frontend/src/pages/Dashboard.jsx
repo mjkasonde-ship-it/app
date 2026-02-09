@@ -440,10 +440,11 @@ export default function Dashboard() {
               <Button 
                 variant="ghost" 
                 size="icon"
-                onClick={() => navigate('/admin')}
-                data-testid="admin-btn"
+                className="hover:bg-[#FFF1E5]"
+                onClick={() => navigate(`/settings/${companyId || ''}`)}
+                data-testid="settings-btn"
               >
-                <Settings className="w-5 h-5" />
+                <Settings className="w-5 h-5 text-cove-navy" />
               </Button>
             </div>
           </div>
@@ -452,35 +453,47 @@ export default function Dashboard() {
 
       {/* Mobile Menu */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-        <SheetContent side="left" className="w-72">
+        <SheetContent side="left" className="w-72 bg-ft-salmon">
           <SheetHeader>
             <SheetTitle>
               <img 
-                src="https://customer-assets.emergentagent.com/job_lusaka-legal-tech/artifacts/xxn68wwl_Cove%20Premium%20Logo.png" 
+                src={COVE_LOGO}
                 alt="Cove" 
-                className="h-14"
+                className="h-12"
               />
             </SheetTitle>
           </SheetHeader>
           <nav className="mt-8 space-y-2">
-            <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => setMobileMenuOpen(false)}>
+            <Button variant="ghost" className="w-full justify-start gap-2 hover:bg-white/50" onClick={() => setMobileMenuOpen(false)}>
               <LayoutDashboard className="w-4 h-4" />
               Dashboard
             </Button>
             <Button 
               variant="ghost" 
-              className="w-full justify-start gap-2"
+              className="w-full justify-start gap-2 hover:bg-white/50"
               onClick={() => { setMobileMenuOpen(false); navigate(`/compliance/${companyId || ''}`); }}
             >
               <FileText className="w-4 h-4" />
               Compliance Matrix
             </Button>
-            <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => setMobileMenuOpen(false)}>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start gap-2 hover:bg-white/50"
+              onClick={() => { setMobileMenuOpen(false); navigate(`/vdr/${companyId || ''}`); }}
+            >
+              <FolderOpen className="w-4 h-4" />
+              My Cove
+            </Button>
+            <Button variant="ghost" className="w-full justify-start gap-2 hover:bg-white/50" onClick={() => setMobileMenuOpen(false)}>
               <Calendar className="w-4 h-4" />
               Calendar
             </Button>
-            <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => { setMobileMenuOpen(false); navigate('/admin'); }}>
+            <Button variant="ghost" className="w-full justify-start gap-2 hover:bg-white/50" onClick={() => { setMobileMenuOpen(false); navigate(`/settings/${companyId || ''}`); }}>
               <Settings className="w-4 h-4" />
+              Settings
+            </Button>
+            <Button variant="ghost" className="w-full justify-start gap-2 hover:bg-white/50" onClick={() => { setMobileMenuOpen(false); navigate('/admin'); }}>
+              <Users className="w-4 h-4" />
               Admin Console
             </Button>
           </nav>
