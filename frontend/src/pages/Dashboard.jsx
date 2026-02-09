@@ -367,61 +367,70 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-ft-salmon flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-600">Loading dashboard...</p>
+          <div className="w-16 h-16 border-4 border-cove-teal border-t-transparent rounded-full animate-spin mx-auto mb-4" style={{borderColor: 'hsl(193, 55%, 45%)', borderTopColor: 'transparent'}} />
+          <p className="text-cove-navy">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100">
+    <div className="min-h-screen bg-ft-salmon">
       {/* Top Navigation */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-40">
+      <header className="bg-white/90 backdrop-blur-md border-b border-[#E8D5C4] sticky top-0 z-40">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
               <button 
-                className="lg:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors"
+                className="lg:hidden p-2 rounded-lg hover:bg-[#FFF1E5] transition-colors"
                 onClick={() => setMobileMenuOpen(true)}
                 data-testid="mobile-menu-btn"
               >
-                <Menu className="w-5 h-5" />
+                <Menu className="w-5 h-5 text-cove-navy" />
               </button>
               <img 
-                src="https://customer-assets.emergentagent.com/job_lusaka-legal-tech/artifacts/xxn68wwl_Cove%20Premium%20Logo.png" 
+                src={COVE_LOGO}
                 alt="Cove" 
-                className="h-14 cursor-pointer"
+                className="h-12 cursor-pointer"
                 onClick={() => navigate('/')}
                 data-testid="dashboard-logo"
               />
             </div>
             
             <nav className="hidden lg:flex items-center gap-1">
-              <Button variant="ghost" className="gap-2 text-emerald-700 bg-emerald-50" data-testid="nav-dashboard">
+              <Button variant="ghost" className="gap-2 text-cove-teal bg-[#E8F4F4]" data-testid="nav-dashboard">
                 <LayoutDashboard className="w-4 h-4" />
                 Dashboard
               </Button>
               <Button 
                 variant="ghost" 
-                className="gap-2"
+                className="gap-2 text-cove-navy hover:bg-[#FFF1E5]"
                 onClick={() => navigate(`/compliance/${companyId || ''}`)}
                 data-testid="nav-compliance"
               >
                 <FileText className="w-4 h-4" />
                 Compliance Matrix
               </Button>
-              <Button variant="ghost" className="gap-2" data-testid="nav-calendar">
+              <Button 
+                variant="ghost" 
+                className="gap-2 text-cove-navy hover:bg-[#FFF1E5]"
+                onClick={() => navigate(`/vdr/${companyId || ''}`)}
+                data-testid="nav-vdr"
+              >
+                <FolderOpen className="w-4 h-4" />
+                My Cove
+              </Button>
+              <Button variant="ghost" className="gap-2 text-cove-navy hover:bg-[#FFF1E5]" data-testid="nav-calendar">
                 <Calendar className="w-4 h-4" />
                 Calendar
               </Button>
             </nav>
 
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="relative" data-testid="notifications-btn">
-                <Bell className="w-5 h-5" />
+              <Button variant="ghost" size="icon" className="relative hover:bg-[#FFF1E5]" data-testid="notifications-btn">
+                <Bell className="w-5 h-5 text-cove-navy" />
                 {(stats?.critical_items || 0) > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-[10px] text-white flex items-center justify-center font-medium">
                     {stats?.critical_items}
