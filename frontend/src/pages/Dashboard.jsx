@@ -510,20 +510,21 @@ export default function Dashboard() {
         >
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight" data-testid="welcome-title">
+              <h1 className="text-2xl sm:text-3xl font-bold text-cove-navy tracking-tight" data-testid="welcome-title">
                 {stats?.company?.name || 'Dashboard'}
               </h1>
-              <p className="text-slate-500 mt-1 flex items-center gap-2">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 capitalize">
+              <p className="text-[#6B5B4F] mt-1 flex items-center gap-2">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/60 text-cove-navy capitalize">
                   {stats?.company?.sector}
                 </span>
-                <span className="text-slate-300">|</span>
+                <span className="text-[#D4C4B5]">|</span>
                 <span className="text-sm">{stats?.company?.sub_sector}</span>
               </p>
             </div>
             <Button 
               onClick={() => navigate(`/compliance/${companyId || ''}`)}
-              className="bg-slate-900 hover:bg-slate-800 text-white gap-2 shadow-lg shadow-slate-900/10"
+              className="bg-cove-navy hover:bg-[#1a3a4a] text-white gap-2 shadow-lg"
+              style={{backgroundColor: 'hsl(210, 60%, 25%)'}}
               data-testid="view-matrix-btn"
             >
               View Full Matrix
@@ -541,13 +542,13 @@ export default function Dashboard() {
             transition={{ delay: 0.1 }}
             className="lg:col-span-4"
           >
-            <Card className="h-full bg-gradient-to-br from-emerald-600 to-emerald-700 text-white border-0 shadow-xl shadow-emerald-600/20 overflow-hidden relative" data-testid="compliance-score-card">
+            <Card className="h-full text-white border-0 shadow-xl overflow-hidden relative" style={{background: 'linear-gradient(135deg, hsl(193, 55%, 40%) 0%, hsl(210, 60%, 30%) 100%)'}} data-testid="compliance-score-card">
               <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
               <CardContent className="p-6 relative">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <p className="text-emerald-100 text-sm font-medium mb-1">Compliance Score</p>
+                    <p className="text-white/80 text-sm font-medium mb-1">Compliance Score</p>
                     <div className="flex items-baseline gap-3">
                       <span className="text-5xl font-bold">{stats?.compliance_score || 0}%</span>
                       <span className={`flex items-center gap-1 text-sm font-medium px-2 py-0.5 rounded-full ${
