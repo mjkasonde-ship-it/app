@@ -9,16 +9,24 @@ import {
   Filter,
   Table2,
   BarChart3,
-  ChevronDown,
   Eye,
   CheckCircle,
   AlertTriangle,
   Calendar,
   FileText,
-  X,
   Sparkles,
   BadgeCheck,
-  Clock
+  Clock,
+  ExternalLink,
+  Users,
+  Building2,
+  Scale,
+  Briefcase,
+  ChevronDown,
+  SlidersHorizontal,
+  X,
+  AlertCircle,
+  CircleDot
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { Input } from "../components/ui/input";
@@ -29,10 +37,68 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { ScrollArea } from "../components/ui/scroll-area";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "../components/ui/dropdown-menu";
 
 const API = process.env.REACT_APP_BACKEND_URL + "/api";
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+// Owner options for filtering
+const OWNERS = ["Legal", "HR", "Finance", "Operations", "Compliance", "Admin"];
+
+// Status options
+const STATUSES = [
+  { value: "all", label: "All Statuses" },
+  { value: "non_compliant", label: "Non-Compliant" },
+  { value: "overdue", label: "Overdue" },
+  { value: "pending", label: "Pending" },
+  { value: "in_progress", label: "In Progress" },
+  { value: "completed", label: "Completed" }
+];
+
+// Column visibility options
+const COLUMNS = [
+  { id: "legislation", label: "Legislation", default: true },
+  { id: "action", label: "Action Required", default: true },
+  { id: "consequences", label: "Consequences", default: true },
+  { id: "owner", label: "Owner", default: true },
+  { id: "dueDate", label: "Due Date", default: true },
+  { id: "status", label: "Status", default: true }
+];
+
+// Assign owner based on category
+const getOwnerFromCategory = (category) => {
+  const ownerMap = {
+    "Corporate": "Legal",
+    "Core Operations": "Operations",
+    "Business Operations": "HR",
+    "Environment": "Compliance"
+  };
+  return ownerMap[category] || "Legal";
+};
+
+// Generate legal reference URL (mock - would be real in production)
+const getLegalReferenceUrl = (statute) => {
+  const baseUrl = "https://zambialii.org/legislation/";
+  const slug = statute.toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .substring(0, 50);
+  return `${baseUrl}${slug}`;
+};
+
+// Extract provision from statute name
+const extractProvision = (statute) => {
+  const match = statute.match(/(?:No\.|Chapter|Act)\s*(\d+(?:\s*of\s*\d+)?)/i);
+  return match ? match[0] : "See Full Text";
+};
 
 export default function ComplianceMatrix() {
   const navigate = useNavigate();
@@ -43,11 +109,15 @@ export default function ComplianceMatrix() {
   const [obligations, setObligations] = useState([]);
   const [viewMode, setViewMode] = useState("table");
   const [searchQuery, setSearchQuery] = useState("");
-  const [severityFilter, setSeverityFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [ownerFilter, setOwnerFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState(searchParams.get('category') || "all");
   const [selectedObligation, setSelectedObligation] = useState(null);
   const [aiSummary, setAiSummary] = useState(null);
   const [loadingAI, setLoadingAI] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState(
+    COLUMNS.reduce((acc, col) => ({ ...acc, [col.id]: col.default }), {})
+  );
 
   useEffect(() => {
     fetchObligations();
@@ -61,10 +131,17 @@ export default function ComplianceMatrix() {
       if (categoryFilter && categoryFilter !== 'all') params.append('category', categoryFilter);
       
       const response = await axios.get(`${API}/obligations?${params.toString()}`);
-      setObligations(response.data);
+      // Enhance obligations with new fields
+      const enhanced = response.data.map(obl => ({
+        ...obl,
+        owner: obl.owner || getOwnerFromCategory(obl.category),
+        provision: obl.provision || extractProvision(obl.statute),
+        legal_reference_url: obl.legal_reference_url || getLegalReferenceUrl(obl.statute),
+        consequences: obl.consequences || obl.penalty || "Non-compliance penalties apply"
+      }));
+      setObligations(enhanced);
     } catch (error) {
       console.error("Error fetching obligations:", error);
-      // Use mock data on error
       setObligations(getMockObligations());
     } finally {
       setLoading(false);
@@ -72,60 +149,92 @@ export default function ComplianceMatrix() {
   };
 
   const getMockObligations = () => [
-    { id: "1", statute: "Mines and Minerals Development Act No. 11 of 2015", obligation: "Annual Mining License Renewal", action_required: "Submit renewal application with updated environmental reports", due_date: "2026-03-31", severity: "high", category: "Core Operations", penalty: "ZMW 500,000 fine or license revocation", frequency: "Annual", responsible_authority: "Ministry of Mines and Minerals Development", status: "pending" },
-    { id: "2", statute: "Environmental Management Act No. 12 of 2011", obligation: "Environmental Impact Assessment Report", action_required: "Commission and submit comprehensive EIA to ZEMA", due_date: "2026-06-30", severity: "critical", category: "Environment", penalty: "Operations suspension", frequency: "Every 3 years", responsible_authority: "Zambia Environmental Management Agency", status: "pending" },
-    { id: "3", statute: "Employment Act Chapter 268", obligation: "Submit Annual Employment Returns", action_required: "File employment statistics with Labour Office", due_date: "2026-02-28", severity: "medium", category: "Business Operations", penalty: "ZMW 10,000 fine", frequency: "Annual", responsible_authority: "Ministry of Labour", status: "pending" },
-    { id: "4", statute: "Income Tax Act Chapter 323", obligation: "Corporate Tax Filing", action_required: "Submit annual corporate tax return with audited financials", due_date: "2026-06-21", severity: "critical", category: "Corporate", penalty: "Penalties and interest on unpaid tax", frequency: "Annual", responsible_authority: "Zambia Revenue Authority", status: "pending" },
-    { id: "5", statute: "Companies Act No. 10 of 2017", obligation: "Annual Return Filing", action_required: "File annual return with PACRA including director updates", due_date: "2026-04-30", severity: "high", category: "Corporate", penalty: "Company strike-off from register", frequency: "Annual", responsible_authority: "Patents and Companies Registration Agency", status: "pending" },
-    { id: "6", statute: "Workers Compensation Act Chapter 271", obligation: "Workers Compensation Insurance Renewal", action_required: "Renew workers compensation coverage", due_date: "2026-01-31", severity: "high", category: "Business Operations", penalty: "ZMW 200,000 fine", frequency: "Annual", responsible_authority: "Workers Compensation Fund Control Board", status: "completed" },
-    { id: "7", statute: "Mining Regulations 2019", obligation: "Quarterly Production Reports", action_required: "Submit mineral production statistics", due_date: "2026-04-15", severity: "medium", category: "Core Operations", penalty: "ZMW 50,000 fine", frequency: "Quarterly", responsible_authority: "Ministry of Mines", status: "pending" },
+    { id: "1", statute: "Mines and Minerals Development Act No. 11 of 2015", provision: "Section 45", legal_reference_url: "https://zambialii.org/legislation/mines-minerals", obligation: "Annual Mining License Renewal", action_required: "Submit renewal application with updated environmental reports", consequences: "License revocation and ZMW 1,000,000 fine", due_date: "2026-03-31", severity: "high", category: "Core Operations", penalty: "ZMW 500,000 fine or license revocation", frequency: "Annual", responsible_authority: "Ministry of Mines", owner: "Operations", status: "pending" },
+    { id: "2", statute: "Environmental Management Act No. 12 of 2011", provision: "Section 29", legal_reference_url: "https://zambialii.org/legislation/environmental-management", obligation: "Environmental Impact Assessment Report", action_required: "Commission and submit comprehensive EIA to ZEMA", consequences: "Operations suspension and rehabilitation order", due_date: "2026-06-30", severity: "critical", category: "Environment", penalty: "Operations suspension", frequency: "Every 3 years", responsible_authority: "ZEMA", owner: "Compliance", status: "non_compliant" },
+    { id: "3", statute: "Employment Act Chapter 268", provision: "Section 127", legal_reference_url: "https://zambialii.org/legislation/employment-act", obligation: "Submit Annual Employment Returns", action_required: "File employment statistics with Labour Office", consequences: "ZMW 10,000 fine and possible audit", due_date: "2026-02-28", severity: "medium", category: "Business Operations", penalty: "ZMW 10,000 fine", frequency: "Annual", responsible_authority: "Ministry of Labour", owner: "HR", status: "pending" },
+    { id: "4", statute: "Income Tax Act Chapter 323", provision: "Section 52", legal_reference_url: "https://zambialii.org/legislation/income-tax", obligation: "Corporate Tax Filing", action_required: "Submit annual corporate tax return with audited financials", consequences: "25% penalty plus interest on unpaid tax", due_date: "2026-06-21", severity: "critical", category: "Corporate", penalty: "Penalties and interest on unpaid tax", frequency: "Annual", responsible_authority: "ZRA", owner: "Finance", status: "pending" },
+    { id: "5", statute: "Companies Act No. 10 of 2017", provision: "Section 256", legal_reference_url: "https://zambialii.org/legislation/companies-act", obligation: "Annual Return Filing", action_required: "File annual return with PACRA including director updates", consequences: "Company strike-off from register", due_date: "2026-04-30", severity: "high", category: "Corporate", penalty: "Company strike-off from register", frequency: "Annual", responsible_authority: "PACRA", owner: "Legal", status: "in_progress" },
+    { id: "6", statute: "Workers Compensation Act Chapter 271", provision: "Section 15", legal_reference_url: "https://zambialii.org/legislation/workers-compensation", obligation: "Workers Compensation Insurance Renewal", action_required: "Renew workers compensation coverage", consequences: "ZMW 200,000 fine and criminal liability", due_date: "2026-01-31", severity: "high", category: "Business Operations", penalty: "ZMW 200,000 fine", frequency: "Annual", responsible_authority: "WCFCB", owner: "HR", status: "overdue" },
+    { id: "7", statute: "Mining Regulations 2019", provision: "Regulation 23", legal_reference_url: "https://zambialii.org/legislation/mining-regulations", obligation: "Quarterly Production Reports", action_required: "Submit mineral production statistics", consequences: "ZMW 50,000 fine per quarter missed", due_date: "2026-04-15", severity: "medium", category: "Core Operations", penalty: "ZMW 50,000 fine", frequency: "Quarterly", responsible_authority: "Ministry of Mines", owner: "Operations", status: "completed" },
   ];
 
+  // Sort and filter obligations - Critical/Non-compliant at top by default
   const filteredObligations = useMemo(() => {
-    return obligations.filter(obl => {
+    let filtered = obligations.filter(obl => {
       const matchesSearch = searchQuery === "" || 
         obl.statute?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        obl.obligation?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesSeverity = severityFilter === "all" || obl.severity === severityFilter;
+        obl.obligation?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        obl.action_required?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === "all" || obl.status === statusFilter;
+      const matchesOwner = ownerFilter === "all" || obl.owner === ownerFilter;
       const matchesCategory = categoryFilter === "all" || obl.category === categoryFilter;
-      return matchesSearch && matchesSeverity && matchesCategory;
+      return matchesSearch && matchesStatus && matchesOwner && matchesCategory;
     });
-  }, [obligations, searchQuery, severityFilter, categoryFilter]);
 
-  const getSeverityBadge = (severity) => {
-    const styles = {
-      critical: "bg-red-100 text-red-800 border-red-200",
-      high: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      medium: "bg-orange-100 text-orange-800 border-orange-200",
-      low: "bg-emerald-100 text-emerald-800 border-emerald-200"
+    // Default sort: Critical severity and non-compliant/overdue status at top
+    const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+    const statusOrder = { non_compliant: 0, overdue: 1, pending: 2, in_progress: 3, completed: 4 };
+    
+    filtered.sort((a, b) => {
+      // First by status (non-compliant/overdue first)
+      const statusDiff = (statusOrder[a.status] || 2) - (statusOrder[b.status] || 2);
+      if (statusDiff !== 0) return statusDiff;
+      
+      // Then by severity
+      const severityDiff = (severityOrder[a.severity] || 2) - (severityOrder[b.severity] || 2);
+      if (severityDiff !== 0) return severityDiff;
+      
+      // Then by due date
+      return new Date(a.due_date) - new Date(b.due_date);
+    });
+
+    return filtered;
+  }, [obligations, searchQuery, statusFilter, ownerFilter, categoryFilter]);
+
+  const getStatusConfig = (status) => {
+    const configs = {
+      non_compliant: { bg: "bg-red-50", text: "text-red-700", border: "border-red-200", icon: AlertCircle, label: "Non-Compliant" },
+      overdue: { bg: "bg-orange-50", text: "text-orange-700", border: "border-orange-200", icon: AlertTriangle, label: "Overdue" },
+      pending: { bg: "bg-slate-50", text: "text-slate-700", border: "border-slate-200", icon: Clock, label: "Pending" },
+      in_progress: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", icon: CircleDot, label: "In Progress" },
+      completed: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", icon: CheckCircle, label: "Completed" }
     };
-    return styles[severity] || styles.medium;
+    return configs[status] || configs.pending;
   };
 
-  const getSeverityColor = (severity) => {
-    const colors = {
-      critical: "#dc2626",
-      high: "#eab308",
-      medium: "#f97316",
-      low: "#059669"
+  const getSeverityConfig = (severity) => {
+    const configs = {
+      critical: { bg: "bg-red-500", text: "text-white", dot: "bg-red-500" },
+      high: { bg: "bg-amber-500", text: "text-white", dot: "bg-amber-500" },
+      medium: { bg: "bg-blue-500", text: "text-white", dot: "bg-blue-500" },
+      low: { bg: "bg-emerald-500", text: "text-white", dot: "bg-emerald-500" }
     };
-    return colors[severity] || colors.medium;
+    return configs[severity] || configs.medium;
   };
 
-  const getStatusBadge = (status) => {
-    const styles = {
-      completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
-      pending: "bg-slate-100 text-slate-800 border-slate-200",
-      in_progress: "bg-blue-100 text-blue-800 border-blue-200",
-      overdue: "bg-red-100 text-red-800 border-red-200"
+  const getOwnerIcon = (owner) => {
+    const icons = {
+      Legal: Scale,
+      HR: Users,
+      Finance: Building2,
+      Operations: Briefcase,
+      Compliance: FileText,
+      Admin: Building2
     };
-    return styles[status] || styles.pending;
+    return icons[owner] || Briefcase;
   };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  };
+
+  const getDaysUntil = (dateStr) => {
+    const today = new Date();
+    const dueDate = new Date(dateStr);
+    const diffTime = dueDate - today;
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
   const handleViewDetails = async (obligation) => {
@@ -135,7 +244,6 @@ export default function ComplianceMatrix() {
 
   const fetchAISummary = async () => {
     if (!selectedObligation) return;
-    
     setLoadingAI(true);
     try {
       const response = await axios.post(`${API}/ai/summary`, {
@@ -152,20 +260,30 @@ export default function ComplianceMatrix() {
     }
   };
 
-  const handleMarkComplete = async (obligationId) => {
+  const handleStatusChange = async (obligationId, newStatus) => {
     try {
       await axios.patch(`${API}/obligations/${obligationId}/status`, null, {
-        params: { status: 'completed' }
+        params: { status: newStatus }
       });
       setObligations(prev => prev.map(o => 
-        o.id === obligationId ? { ...o, status: 'completed' } : o
+        o.id === obligationId ? { ...o, status: newStatus } : o
       ));
-      toast.success("Obligation marked as complete");
+      toast.success(`Status updated to ${newStatus.replace('_', ' ')}`);
     } catch (error) {
       console.error("Error updating status:", error);
       toast.error("Failed to update status");
     }
   };
+
+  const toggleColumn = (columnId) => {
+    setVisibleColumns(prev => ({ ...prev, [columnId]: !prev[columnId] }));
+  };
+
+  const activeFiltersCount = [
+    statusFilter !== "all",
+    ownerFilter !== "all",
+    categoryFilter !== "all"
+  ].filter(Boolean).length;
 
   // Gantt Chart Data
   const ganttData = useMemo(() => {
@@ -176,12 +294,7 @@ export default function ComplianceMatrix() {
       const dayOfMonth = dueDate.getDate();
       const daysInMonth = new Date(currentYear, monthIndex + 1, 0).getDate();
       const position = ((monthIndex * 100) / 12) + ((dayOfMonth / daysInMonth) * (100 / 12));
-      
-      return {
-        ...obl,
-        monthIndex,
-        position: Math.min(position, 100)
-      };
+      return { ...obl, monthIndex, position: Math.min(position, 100) };
     });
   }, [filteredObligations]);
 
@@ -189,8 +302,8 @@ export default function ComplianceMatrix() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-600">Loading compliance data...</p>
+          <div className="w-12 h-12 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-slate-500 text-sm">Loading compliance data...</p>
         </div>
       </div>
     );
@@ -198,98 +311,149 @@ export default function ComplianceMatrix() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header */}
+      {/* Minimalist Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-14">
+            <div className="flex items-center gap-3">
               <Button 
                 variant="ghost" 
-                size="icon"
+                size="sm"
                 onClick={() => navigate(companyId ? `/dashboard/${companyId}` : '/dashboard')}
+                className="gap-1.5 text-slate-600"
                 data-testid="back-btn"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Dashboard</span>
               </Button>
-              <div>
-                <h1 className="font-heading text-xl font-bold text-slate-900">Compliance Matrix</h1>
-                <p className="text-sm text-slate-500">{filteredObligations.length} obligations</p>
-              </div>
+              <div className="h-4 w-px bg-slate-200" />
+              <h1 className="font-semibold text-slate-900">Compliance Matrix</h1>
+              <Badge variant="secondary" className="text-xs">
+                {filteredObligations.length}
+              </Badge>
             </div>
             
             <img 
               src="https://customer-assets.emergentagent.com/job_lusaka-legal-tech/artifacts/xxn68wwl_Cove%20Premium%20Logo.png" 
               alt="Cove" 
-              className="h-16 cursor-pointer"
+              className="h-10 cursor-pointer"
               onClick={() => navigate('/')}
             />
           </div>
         </div>
       </header>
 
-      {/* Controls */}
-      <div className="bg-white border-b border-slate-200 py-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-            <div className="flex flex-1 gap-3 flex-wrap">
-              <div className="relative flex-1 min-w-[200px] max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+      {/* Compact Controls Bar */}
+      <div className="bg-white border-b border-slate-100 py-3">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+            {/* Search and Filters */}
+            <div className="flex flex-1 gap-2 flex-wrap items-center">
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <Input
-                  placeholder="Search obligations..."
+                  placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-8 h-9 text-sm"
                   data-testid="search-input"
                 />
               </div>
               
-              <Select value={severityFilter} onValueChange={setSeverityFilter}>
-                <SelectTrigger className="w-[150px]" data-testid="severity-filter">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Severity" />
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[140px] h-9 text-sm" data-testid="status-filter">
+                  <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Severities</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
+                  {STATUSES.map(s => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-[180px]" data-testid="category-filter">
-                  <SelectValue placeholder="Category" />
+              <Select value={ownerFilter} onValueChange={setOwnerFilter}>
+                <SelectTrigger className="w-[130px] h-9 text-sm" data-testid="owner-filter">
+                  <SelectValue placeholder="Owner" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="Corporate">Corporate</SelectItem>
-                  <SelectItem value="Core Operations">Core Operations</SelectItem>
-                  <SelectItem value="Business Operations">Business Operations</SelectItem>
-                  <SelectItem value="Environment">Environment</SelectItem>
+                  <SelectItem value="all">All Owners</SelectItem>
+                  {OWNERS.map(o => (
+                    <SelectItem key={o} value={o}>{o}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+
+              {activeFiltersCount > 0 && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-9 text-xs text-slate-500"
+                  onClick={() => {
+                    setStatusFilter("all");
+                    setOwnerFilter("all");
+                    setCategoryFilter("all");
+                  }}
+                >
+                  Clear ({activeFiltersCount})
+                </Button>
+              )}
             </div>
 
-            {/* View Toggle */}
-            <Tabs value={viewMode} onValueChange={setViewMode} className="w-auto">
-              <TabsList className="grid grid-cols-2 w-[200px]">
-                <TabsTrigger value="table" className="gap-2" data-testid="table-view-btn">
-                  <Table2 className="w-4 h-4" />
-                  Table
-                </TabsTrigger>
-                <TabsTrigger value="gantt" className="gap-2" data-testid="gantt-view-btn">
-                  <BarChart3 className="w-4 h-4" />
-                  Gantt
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+            {/* View Controls */}
+            <div className="flex items-center gap-2">
+              {/* Column Visibility */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-9 gap-1.5">
+                    <SlidersHorizontal className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Columns</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {COLUMNS.map(col => (
+                    <DropdownMenuCheckboxItem
+                      key={col.id}
+                      checked={visibleColumns[col.id]}
+                      onCheckedChange={() => toggleColumn(col.id)}
+                    >
+                      {col.label}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* View Toggle */}
+              <div className="flex border rounded-lg overflow-hidden">
+                <Button
+                  variant={viewMode === "table" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="h-9 rounded-none gap-1.5"
+                  onClick={() => setViewMode("table")}
+                  data-testid="table-view-btn"
+                >
+                  <Table2 className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Table</span>
+                </Button>
+                <Button
+                  variant={viewMode === "gantt" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="h-9 rounded-none gap-1.5"
+                  onClick={() => setViewMode("gantt")}
+                  data-testid="gantt-view-btn"
+                >
+                  <BarChart3 className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Timeline</span>
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <AnimatePresence mode="wait">
           {viewMode === "table" ? (
             <motion.div
@@ -298,92 +462,184 @@ export default function ComplianceMatrix() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              <Card data-testid="compliance-table">
+              <Card className="border-slate-200/60 shadow-sm" data-testid="compliance-table">
                 <CardContent className="p-0">
-                  <ScrollArea className="h-[calc(100vh-280px)]">
+                  <ScrollArea className="h-[calc(100vh-220px)]">
                     <Table>
-                      <TableHeader className="sticky top-0 bg-white z-10">
-                        <TableRow className="bg-slate-50">
-                          <TableHead className="w-[100px] font-semibold">Severity</TableHead>
-                          <TableHead className="font-semibold">Statute</TableHead>
-                          <TableHead className="font-semibold">Obligation</TableHead>
-                          <TableHead className="font-semibold hidden lg:table-cell">Action Required</TableHead>
-                          <TableHead className="w-[120px] font-semibold">Due Date</TableHead>
-                          <TableHead className="w-[100px] font-semibold">Status</TableHead>
-                          <TableHead className="w-[100px] font-semibold text-center">Actions</TableHead>
+                      <TableHeader className="sticky top-0 bg-slate-50/95 backdrop-blur-sm z-10">
+                        <TableRow className="hover:bg-slate-50/95">
+                          {visibleColumns.legislation && (
+                            <TableHead className="font-medium text-slate-700 text-xs uppercase tracking-wide w-[280px]">
+                              Legislation
+                            </TableHead>
+                          )}
+                          {visibleColumns.action && (
+                            <TableHead className="font-medium text-slate-700 text-xs uppercase tracking-wide">
+                              Action Required
+                            </TableHead>
+                          )}
+                          {visibleColumns.consequences && (
+                            <TableHead className="font-medium text-slate-700 text-xs uppercase tracking-wide hidden lg:table-cell">
+                              Consequences
+                            </TableHead>
+                          )}
+                          {visibleColumns.owner && (
+                            <TableHead className="font-medium text-slate-700 text-xs uppercase tracking-wide w-[100px]">
+                              Owner
+                            </TableHead>
+                          )}
+                          {visibleColumns.dueDate && (
+                            <TableHead className="font-medium text-slate-700 text-xs uppercase tracking-wide w-[100px]">
+                              Due
+                            </TableHead>
+                          )}
+                          {visibleColumns.status && (
+                            <TableHead className="font-medium text-slate-700 text-xs uppercase tracking-wide w-[130px]">
+                              Status
+                            </TableHead>
+                          )}
+                          <TableHead className="w-[60px]" />
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredObligations.map((obl, idx) => (
-                          <TableRow 
-                            key={obl.id} 
-                            className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}
-                            data-testid={`obligation-row-${idx}`}
-                          >
-                            <TableCell>
-                              <Badge className={`${getSeverityBadge(obl.severity)} capitalize`}>
-                                {obl.severity}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="font-medium text-slate-900 max-w-[200px]">
-                              <div className="truncate" title={obl.statute}>
-                                {obl.statute}
-                              </div>
-                            </TableCell>
-                            <TableCell className="max-w-[200px]">
-                              <div className="truncate" title={obl.obligation}>
-                                {obl.obligation}
-                              </div>
-                            </TableCell>
-                            <TableCell className="hidden lg:table-cell max-w-[200px]">
-                              <div className="truncate text-slate-600" title={obl.action_required}>
-                                {obl.action_required}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1.5 text-slate-600">
-                                <Calendar className="w-3.5 h-3.5" />
-                                {formatDate(obl.due_date)}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={`${getStatusBadge(obl.status)} capitalize`}>
-                                {obl.status?.replace('_', ' ')}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center justify-center gap-1">
+                        {filteredObligations.map((obl, idx) => {
+                          const statusConfig = getStatusConfig(obl.status);
+                          const severityConfig = getSeverityConfig(obl.severity);
+                          const OwnerIcon = getOwnerIcon(obl.owner);
+                          const daysUntil = getDaysUntil(obl.due_date);
+                          
+                          return (
+                            <TableRow 
+                              key={obl.id} 
+                              className={`group hover:bg-slate-50/80 transition-colors ${
+                                obl.status === 'non_compliant' || obl.status === 'overdue' 
+                                  ? 'bg-red-50/30' 
+                                  : ''
+                              }`}
+                              data-testid={`obligation-row-${idx}`}
+                            >
+                              {visibleColumns.legislation && (
+                                <TableCell className="py-3">
+                                  <div className="flex items-start gap-2">
+                                    {/* Severity indicator */}
+                                    <div className={`w-1 h-12 rounded-full flex-shrink-0 ${severityConfig.dot}`} />
+                                    <div className="min-w-0 flex-1">
+                                      {/* Merged Legislation + Provision as clickable link */}
+                                      <a
+                                        href={obl.legal_reference_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-900 hover:text-emerald-700 transition-colors group/link"
+                                        data-testid={`legislation-link-${idx}`}
+                                      >
+                                        <span className="truncate max-w-[180px]" title={obl.statute}>
+                                          {obl.statute.split(' ').slice(0, 4).join(' ')}...
+                                        </span>
+                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 font-normal shrink-0">
+                                          {obl.provision}
+                                        </Badge>
+                                        <ExternalLink className="w-3 h-3 opacity-0 group-hover/link:opacity-100 transition-opacity flex-shrink-0" />
+                                      </a>
+                                      <p className="text-xs text-slate-500 mt-0.5 truncate" title={obl.obligation}>
+                                        {obl.obligation}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                              )}
+                              {visibleColumns.action && (
+                                <TableCell className="py-3">
+                                  <p className="text-sm text-slate-700 line-clamp-2" title={obl.action_required}>
+                                    {obl.action_required}
+                                  </p>
+                                </TableCell>
+                              )}
+                              {visibleColumns.consequences && (
+                                <TableCell className="py-3 hidden lg:table-cell">
+                                  <p className="text-sm text-slate-500 line-clamp-2" title={obl.consequences}>
+                                    {obl.consequences}
+                                  </p>
+                                </TableCell>
+                              )}
+                              {visibleColumns.owner && (
+                                <TableCell className="py-3">
+                                  <div className="flex items-center gap-1.5">
+                                    <OwnerIcon className="w-3.5 h-3.5 text-slate-400" />
+                                    <span className="text-sm text-slate-600">{obl.owner}</span>
+                                  </div>
+                                </TableCell>
+                              )}
+                              {visibleColumns.dueDate && (
+                                <TableCell className="py-3">
+                                  <div className="text-sm">
+                                    <span className={`font-medium ${
+                                      daysUntil < 0 ? 'text-red-600' :
+                                      daysUntil <= 7 ? 'text-amber-600' :
+                                      'text-slate-700'
+                                    }`}>
+                                      {formatDate(obl.due_date)}
+                                    </span>
+                                    {daysUntil <= 14 && daysUntil >= 0 && (
+                                      <p className="text-[10px] text-amber-600">{daysUntil}d left</p>
+                                    )}
+                                    {daysUntil < 0 && (
+                                      <p className="text-[10px] text-red-600">{Math.abs(daysUntil)}d overdue</p>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              )}
+                              {visibleColumns.status && (
+                                <TableCell className="py-3">
+                                  <Select 
+                                    value={obl.status} 
+                                    onValueChange={(val) => handleStatusChange(obl.id, val)}
+                                  >
+                                    <SelectTrigger className={`h-7 text-xs border ${statusConfig.border} ${statusConfig.bg} ${statusConfig.text} w-[110px]`}>
+                                      <statusConfig.icon className="w-3 h-3 mr-1" />
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="pending">Pending</SelectItem>
+                                      <SelectItem value="in_progress">In Progress</SelectItem>
+                                      <SelectItem value="completed">Completed</SelectItem>
+                                      <SelectItem value="non_compliant">Non-Compliant</SelectItem>
+                                      <SelectItem value="overdue">Overdue</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </TableCell>
+                              )}
+                              <TableCell className="py-3">
                                 <Button 
                                   variant="ghost" 
-                                  size="icon" 
-                                  className="h-8 w-8"
+                                  size="sm" 
+                                  className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                   onClick={() => handleViewDetails(obl)}
                                   data-testid={`view-details-btn-${idx}`}
                                 >
                                   <Eye className="w-4 h-4" />
                                 </Button>
-                                {obl.status !== 'completed' && (
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                                    onClick={() => handleMarkComplete(obl.id)}
-                                    data-testid={`complete-btn-${idx}`}
-                                  >
-                                    <CheckCircle className="w-4 h-4" />
-                                  </Button>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                     
                     {filteredObligations.length === 0 && (
-                      <div className="text-center py-12 text-slate-500">
-                        <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <p>No obligations found matching your filters</p>
+                      <div className="text-center py-16 text-slate-500">
+                        <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                        <p className="text-sm">No obligations match your filters</p>
+                        <Button 
+                          variant="link" 
+                          className="text-sm mt-2"
+                          onClick={() => {
+                            setSearchQuery("");
+                            setStatusFilter("all");
+                            setOwnerFilter("all");
+                          }}
+                        >
+                          Clear all filters
+                        </Button>
                       </div>
                     )}
                   </ScrollArea>
@@ -397,23 +653,22 @@ export default function ComplianceMatrix() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              <Card data-testid="gantt-chart">
-                <CardHeader>
-                  <CardTitle className="font-heading">Timeline View - 2026</CardTitle>
-                  <CardDescription>Compliance deadlines throughout the year</CardDescription>
+              <Card className="border-slate-200/60 shadow-sm" data-testid="gantt-chart">
+                <CardHeader className="py-4 px-6">
+                  <CardTitle className="text-base font-semibold">Timeline - 2026</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[calc(100vh-350px)]">
+                <CardContent className="p-0">
+                  <ScrollArea className="h-[calc(100vh-280px)]">
                     {/* Month Headers */}
                     <div className="flex border-b border-slate-200 sticky top-0 bg-white z-10">
-                      <div className="w-64 flex-shrink-0 p-3 font-semibold text-slate-700 border-r border-slate-200">
+                      <div className="w-56 flex-shrink-0 p-3 text-xs font-medium text-slate-500 border-r border-slate-100">
                         Obligation
                       </div>
                       <div className="flex-1 flex">
                         {MONTHS.map((month, idx) => (
                           <div 
                             key={month} 
-                            className={`flex-1 p-3 text-center text-sm font-medium ${idx % 2 === 0 ? 'bg-slate-50' : 'bg-white'}`}
+                            className={`flex-1 p-2 text-center text-xs font-medium text-slate-500 ${idx % 2 === 0 ? 'bg-slate-50/50' : ''}`}
                           >
                             {month}
                           </div>
@@ -422,60 +677,62 @@ export default function ComplianceMatrix() {
                     </div>
 
                     {/* Gantt Rows */}
-                    {ganttData.map((obl, idx) => (
-                      <div 
-                        key={obl.id} 
-                        className={`flex border-b border-slate-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
-                        data-testid={`gantt-row-${idx}`}
-                      >
-                        <div className="w-64 flex-shrink-0 p-3 border-r border-slate-200">
-                          <div className="flex items-start gap-2">
-                            <Badge className={`${getSeverityBadge(obl.severity)} capitalize flex-shrink-0 mt-0.5`}>
-                              {obl.severity?.slice(0, 1).toUpperCase()}
-                            </Badge>
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium text-slate-900 truncate" title={obl.obligation}>
-                                {obl.obligation}
-                              </p>
-                              <p className="text-xs text-slate-500 truncate" title={obl.statute}>
-                                {obl.statute}
-                              </p>
+                    {ganttData.map((obl, idx) => {
+                      const severityConfig = getSeverityConfig(obl.severity);
+                      const statusConfig = getStatusConfig(obl.status);
+                      
+                      return (
+                        <div 
+                          key={obl.id} 
+                          className={`flex border-b border-slate-50 hover:bg-slate-50/50 transition-colors ${
+                            obl.status === 'non_compliant' || obl.status === 'overdue' ? 'bg-red-50/20' : ''
+                          }`}
+                          data-testid={`gantt-row-${idx}`}
+                        >
+                          <div className="w-56 flex-shrink-0 p-3 border-r border-slate-100">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-1.5 h-8 rounded-full ${severityConfig.dot}`} />
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-slate-900 truncate" title={obl.obligation}>
+                                  {obl.obligation}
+                                </p>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">
+                                    {obl.owner}
+                                  </Badge>
+                                  <statusConfig.icon className={`w-3 h-3 ${statusConfig.text}`} />
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex-1 relative py-3 px-2">
-                          {/* Month grid lines */}
-                          <div className="absolute inset-0 flex">
-                            {MONTHS.map((_, idx) => (
-                              <div 
-                                key={idx} 
-                                className={`flex-1 border-r border-slate-100 ${idx % 2 === 0 ? 'bg-slate-50/50' : ''}`} 
-                              />
-                            ))}
-                          </div>
-                          
-                          {/* Deadline marker */}
-                          <div 
-                            className="absolute top-1/2 -translate-y-1/2 transform cursor-pointer group"
-                            style={{ left: `${obl.position}%` }}
-                            onClick={() => handleViewDetails(obl)}
-                          >
+                          <div className="flex-1 relative py-3">
+                            {/* Month grid */}
+                            <div className="absolute inset-0 flex">
+                              {MONTHS.map((_, idx) => (
+                                <div key={idx} className={`flex-1 border-r border-slate-50 ${idx % 2 === 0 ? 'bg-slate-50/30' : ''}`} />
+                              ))}
+                            </div>
+                            
+                            {/* Deadline marker */}
                             <div 
-                              className="w-4 h-4 rounded-full shadow-md transition-transform group-hover:scale-125"
-                              style={{ backgroundColor: getSeverityColor(obl.severity) }}
-                            />
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-20">
-                              {formatDate(obl.due_date)}
+                              className="absolute top-1/2 -translate-y-1/2 cursor-pointer group"
+                              style={{ left: `${obl.position}%` }}
+                              onClick={() => handleViewDetails(obl)}
+                            >
+                              <div className={`w-3 h-3 rounded-full shadow-sm transition-transform group-hover:scale-150 ${severityConfig.dot}`} />
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-20">
+                                {formatDate(obl.due_date)} - {obl.owner}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
 
                     {ganttData.length === 0 && (
-                      <div className="text-center py-12 text-slate-500">
-                        <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <p>No obligations to display in timeline</p>
+                      <div className="text-center py-16 text-slate-500">
+                        <BarChart3 className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                        <p className="text-sm">No obligations to display</p>
                       </div>
                     )}
                   </ScrollArea>
@@ -488,88 +745,80 @@ export default function ComplianceMatrix() {
 
       {/* Detail Sheet */}
       <Sheet open={!!selectedObligation} onOpenChange={() => setSelectedObligation(null)}>
-        <SheetContent className="w-full sm:max-w-xl overflow-y-auto" data-testid="obligation-detail-sheet">
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto" data-testid="obligation-detail-sheet">
           {selectedObligation && (
             <>
-              <SheetHeader>
-                <div className="flex items-center gap-3 mb-2">
-                  <Badge className={`${getSeverityBadge(selectedObligation.severity)} capitalize`}>
-                    {selectedObligation.severity}
-                  </Badge>
-                  <Badge className={`${getStatusBadge(selectedObligation.status)} capitalize`}>
-                    {selectedObligation.status?.replace('_', ' ')}
-                  </Badge>
+              <SheetHeader className="pb-4 border-b">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className={`w-2 h-8 rounded-full ${getSeverityConfig(selectedObligation.severity).dot}`} />
+                  <div>
+                    <Badge className={`${getStatusConfig(selectedObligation.status).bg} ${getStatusConfig(selectedObligation.status).text} ${getStatusConfig(selectedObligation.status).border} text-xs`}>
+                      {getStatusConfig(selectedObligation.status).label}
+                    </Badge>
+                  </div>
                 </div>
-                <SheetTitle className="font-heading text-xl">
+                <SheetTitle className="text-lg leading-tight">
                   {selectedObligation.obligation}
                 </SheetTitle>
                 <SheetDescription>
-                  {selectedObligation.statute}
+                  <a 
+                    href={selectedObligation.legal_reference_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700"
+                  >
+                    {selectedObligation.statute}
+                    <Badge variant="outline" className="text-[10px] ml-1">{selectedObligation.provision}</Badge>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
                 </SheetDescription>
               </SheetHeader>
 
-              <div className="mt-6 space-y-6">
-                {/* Key Details */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-50 p-4 rounded-lg">
-                    <p className="text-xs text-slate-500 mb-1">Due Date</p>
-                    <p className="font-semibold text-slate-900">{formatDate(selectedObligation.due_date)}</p>
+              <div className="mt-6 space-y-5">
+                {/* Key Info Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-slate-50 p-3 rounded-lg">
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Due Date</p>
+                    <p className="text-sm font-semibold text-slate-900">{formatDate(selectedObligation.due_date)}</p>
                   </div>
-                  <div className="bg-slate-50 p-4 rounded-lg">
-                    <p className="text-xs text-slate-500 mb-1">Frequency</p>
-                    <p className="font-semibold text-slate-900">{selectedObligation.frequency || 'Once'}</p>
-                  </div>
-                  <div className="bg-slate-50 p-4 rounded-lg col-span-2">
-                    <p className="text-xs text-slate-500 mb-1">Responsible Authority</p>
-                    <p className="font-semibold text-slate-900">{selectedObligation.responsible_authority || '-'}</p>
+                  <div className="bg-slate-50 p-3 rounded-lg">
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Owner</p>
+                    <p className="text-sm font-semibold text-slate-900">{selectedObligation.owner}</p>
                   </div>
                 </div>
 
                 {/* Action Required */}
                 <div>
-                  <h4 className="font-semibold text-slate-900 mb-2">Action Required</h4>
-                  <p className="text-slate-600">{selectedObligation.action_required}</p>
+                  <h4 className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Action Required</h4>
+                  <p className="text-sm text-slate-700">{selectedObligation.action_required}</p>
                 </div>
 
-                {/* Penalty */}
-                {selectedObligation.penalty && (
-                  <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                    <div className="flex items-center gap-2 mb-2">
-                      <AlertTriangle className="w-4 h-4 text-red-600" />
-                      <h4 className="font-semibold text-red-900">Non-Compliance Penalty</h4>
-                    </div>
-                    <p className="text-red-700">{selectedObligation.penalty}</p>
+                {/* Consequences */}
+                <div className="bg-amber-50/50 p-4 rounded-lg border border-amber-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-600" />
+                    <h4 className="text-xs font-medium text-amber-900 uppercase tracking-wide">Consequences</h4>
                   </div>
-                )}
+                  <p className="text-sm text-amber-800">{selectedObligation.consequences}</p>
+                </div>
 
-                {/* AI Summary Section */}
-                <div className="border-t border-slate-200 pt-6">
-                  <div className="flex items-center justify-between mb-4">
+                {/* AI Summary */}
+                <div className="border-t pt-5">
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-amber-600" />
-                      <h4 className="font-semibold text-slate-900">AI Legal Summary</h4>
+                      <Sparkles className="w-4 h-4 text-amber-600" />
+                      <h4 className="text-xs font-medium text-slate-700 uppercase tracking-wide">AI Summary</h4>
                     </div>
                     {!aiSummary && (
                       <Button
                         size="sm"
+                        variant="outline"
                         onClick={fetchAISummary}
                         disabled={loadingAI}
-                        className="bg-amber-600 hover:bg-amber-700"
+                        className="h-7 text-xs"
                         data-testid="generate-ai-summary-btn"
                       >
-                        {loadingAI ? (
-                          <>
-                            <span className="animate-spin mr-2">
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                              </svg>
-                            </span>
-                            Generating...
-                          </>
-                        ) : (
-                          'Generate Summary'
-                        )}
+                        {loadingAI ? "Generating..." : "Generate"}
                       </Button>
                     )}
                   </div>
@@ -578,57 +827,52 @@ export default function ComplianceMatrix() {
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="bg-amber-50 p-4 rounded-lg border border-amber-200"
+                      className="bg-slate-50 p-4 rounded-lg text-sm"
                       data-testid="ai-summary-content"
                     >
-                      <p className="text-slate-700 mb-4">{aiSummary.summary}</p>
-                      
-                      {aiSummary.key_points && aiSummary.key_points.length > 0 && (
-                        <div className="mb-4">
-                          <h5 className="font-medium text-slate-900 mb-2">Key Points:</h5>
-                          <ul className="space-y-1">
-                            {aiSummary.key_points.map((point, idx) => (
-                              <li key={idx} className="flex items-start gap-2 text-sm text-slate-600">
-                                <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-                                {point}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
+                      <p className="text-slate-700 mb-3">{aiSummary.summary}</p>
+                      {aiSummary.key_points?.length > 0 && (
+                        <ul className="space-y-1.5">
+                          {aiSummary.key_points.map((point, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-slate-600">
+                              <CheckCircle className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                              <span className="text-xs">{point}</span>
+                            </li>
+                          ))}
+                        </ul>
                       )}
-
-                      <div className="flex items-center gap-4 pt-3 border-t border-amber-200">
-                        <div className="flex items-center gap-1.5 text-xs text-amber-700">
-                          <BadgeCheck className="w-4 h-4" />
+                      <div className="flex items-center gap-3 pt-3 mt-3 border-t border-slate-200">
+                        <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                          <BadgeCheck className="w-3 h-3" />
                           {aiSummary.approved_by}
-                        </div>
-                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                          <Clock className="w-3.5 h-3.5" />
-                          {new Date(aiSummary.last_updated).toLocaleDateString()}
-                        </div>
+                        </span>
                       </div>
                     </motion.div>
                   )}
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-4">
-                  {selectedObligation.status !== 'completed' && (
-                    <Button
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-                      onClick={() => {
-                        handleMarkComplete(selectedObligation.id);
-                        setSelectedObligation(null);
-                      }}
-                      data-testid="mark-complete-btn"
-                    >
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Mark Complete
-                    </Button>
-                  )}
-                  <Button variant="outline" className="flex-1" data-testid="set-reminder-btn">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Set Reminder
+                <div className="flex gap-2 pt-4">
+                  <Select 
+                    value={selectedObligation.status} 
+                    onValueChange={(val) => {
+                      handleStatusChange(selectedObligation.id, val);
+                      setSelectedObligation({ ...selectedObligation, status: val });
+                    }}
+                  >
+                    <SelectTrigger className="flex-1 h-9">
+                      <SelectValue placeholder="Update Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="non_compliant">Non-Compliant</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button variant="outline" size="sm" className="h-9" data-testid="set-reminder-btn">
+                    <Calendar className="w-4 h-4 mr-1.5" />
+                    Remind
                   </Button>
                 </div>
               </div>
