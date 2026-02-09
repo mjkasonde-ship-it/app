@@ -374,6 +374,140 @@ export default function ComplianceMatrix() {
     }
   };
 
+  // Mark Overdue function
+  const handleMarkOverdue = async () => {
+    try {
+      const response = await axios.post(`${API}/obligations/mark-overdue`, null, {
+        params: companyId ? { company_id: companyId } : {}
+      });
+      
+      if (response.data.updated_count > 0) {
+        toast.success(`Marked ${response.data.updated_count} obligations as overdue`);
+        fetchObligations(); // Refresh the list
+      } else {
+        toast.info("No overdue obligations found");
+      }
+    } catch (error) {
+      console.error("Error marking overdue:", error);
+      toast.error("Failed to mark overdue obligations");
+    }
+  };
+
+  // Export to Excel
+  const handleExportExcel = () => {
+    const exportData = filteredObligations.map(obl => ({
+      "Legislation": obl.statute,
+      "Provision": obl.provision,
+      "Obligation": obl.obligation,
+      "Action Required": obl.action_required,
+      "Consequences": obl.consequences,
+      "Owner": obl.owner,
+      "Due Date": obl.due_date,
+      "Status": obl.status?.replace('_', ' ').toUpperCase(),
+      "Severity": obl.severity?.toUpperCase(),
+      "Category": obl.category
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Compliance Matrix");
+    
+    // Auto-size columns
+    const maxWidth = 50;
+    const colWidths = Object.keys(exportData[0] || {}).map(key => ({
+      wch: Math.min(maxWidth, Math.max(key.length, ...exportData.map(row => String(row[key] || '').length)))
+    }));
+    worksheet['!cols'] = colWidths;
+
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(data, `compliance-matrix-${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast.success("Excel file downloaded");
+  };
+
+  // Export to PDF
+  const handleExportPDF = () => {
+    const doc = new jsPDF('landscape', 'mm', 'a4');
+    
+    // Header
+    doc.setFontSize(18);
+    doc.setTextColor(16, 185, 129); // Emerald color
+    doc.text("Compliance Matrix Report", 14, 20);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Generated: ${new Date().toLocaleDateString('en-GB', { 
+      day: 'numeric', month: 'long', year: 'numeric' 
+    })}`, 14, 28);
+    doc.text(`Total Obligations: ${filteredObligations.length}`, 14, 34);
+
+    // Summary stats
+    const stats = {
+      completed: filteredObligations.filter(o => o.status === 'completed').length,
+      pending: filteredObligations.filter(o => o.status === 'pending').length,
+      overdue: filteredObligations.filter(o => o.status === 'overdue').length,
+      critical: filteredObligations.filter(o => o.severity === 'critical').length
+    };
+    doc.text(`Completed: ${stats.completed} | Pending: ${stats.pending} | Overdue: ${stats.overdue} | Critical: ${stats.critical}`, 14, 40);
+
+    // Table data
+    const tableData = filteredObligations.map(obl => [
+      obl.statute?.substring(0, 30) + (obl.statute?.length > 30 ? '...' : ''),
+      obl.obligation?.substring(0, 40) + (obl.obligation?.length > 40 ? '...' : ''),
+      obl.owner,
+      obl.due_date,
+      obl.status?.replace('_', ' '),
+      obl.severity
+    ]);
+
+    autoTable(doc, {
+      startY: 48,
+      head: [['Legislation', 'Obligation', 'Owner', 'Due Date', 'Status', 'Severity']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: { 
+        fillColor: [16, 185, 129], 
+        textColor: 255,
+        fontStyle: 'bold'
+      },
+      styles: { 
+        fontSize: 8,
+        cellPadding: 2
+      },
+      columnStyles: {
+        0: { cellWidth: 50 },
+        1: { cellWidth: 70 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 25 },
+        5: { cellWidth: 20 }
+      },
+      didDrawCell: (data) => {
+        // Color-code status cells
+        if (data.column.index === 4 && data.cell.section === 'body') {
+          const status = data.cell.raw?.toLowerCase();
+          if (status === 'overdue' || status === 'non compliant') {
+            doc.setFillColor(254, 226, 226);
+          } else if (status === 'completed') {
+            doc.setFillColor(209, 250, 229);
+          }
+        }
+      }
+    });
+
+    // Footer
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(`Page ${i} of ${pageCount} | Cove - Zambia Legal Tech`, 14, doc.internal.pageSize.height - 10);
+    }
+
+    doc.save(`compliance-matrix-${new Date().toISOString().split('T')[0]}.pdf`);
+    toast.success("PDF file downloaded");
+  };
+
   const isAllSelected = filteredObligations.length > 0 && selectedIds.size === filteredObligations.length;
   const isSomeSelected = selectedIds.size > 0 && selectedIds.size < filteredObligations.length;
 
