@@ -864,6 +864,64 @@ async def bulk_update_obligation_status(request: BulkStatusUpdate):
         "status": request.status
     }
 
+# Auto-mark overdue obligations
+@api_router.post("/obligations/mark-overdue")
+async def mark_overdue_obligations(company_id: Optional[str] = None):
+    """Automatically mark all obligations past their due date as overdue"""
+    today = datetime.now(timezone.utc).isoformat()
+    
+    query = {
+        "due_date": {"$lt": today},
+        "status": {"$nin": ["completed", "overdue"]}
+    }
+    if company_id:
+        query["company_id"] = company_id
+    
+    result = await db.obligations.update_many(
+        query,
+        {"$set": {"status": "overdue"}}
+    )
+    
+    return {
+        "message": f"Marked {result.modified_count} obligations as overdue",
+        "updated_count": result.modified_count
+    }
+
+# Export data endpoint
+@api_router.get("/obligations/export")
+async def export_obligations(
+    company_id: Optional[str] = None,
+    format: str = "json"
+):
+    """Export obligations data for PDF/Excel generation"""
+    query = {}
+    if company_id:
+        query["company_id"] = company_id
+    
+    obligations = await db.obligations.find(query, {"_id": 0}).to_list(1000)
+    
+    # Enhance with computed fields
+    for obl in obligations:
+        if not obl.get("provision"):
+            statute = obl.get("statute", "")
+            import re
+            match = re.search(r'(?:No\.|Chapter|Act|Section)\s*(\d+(?:\s*of\s*\d+)?)', statute)
+            obl["provision"] = match.group(0) if match else "See Full Text"
+        
+        if not obl.get("owner"):
+            category = obl.get("category", "Corporate")
+            owner_map = {"Corporate": "Legal", "Core Operations": "Operations", "Business Operations": "HR", "Environment": "Compliance"}
+            obl["owner"] = owner_map.get(category, "Legal")
+        
+        if not obl.get("consequences"):
+            obl["consequences"] = obl.get("penalty", "Non-compliance penalties apply")
+    
+    return {
+        "obligations": obligations,
+        "count": len(obligations),
+        "exported_at": datetime.now(timezone.utc).isoformat()
+    }
+
 # Sectors
 @api_router.get("/sectors")
 async def get_sectors():
