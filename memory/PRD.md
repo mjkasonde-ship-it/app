@@ -190,6 +190,8 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
 ### P0 (Completed in Current Sprint)
 - [x] Logo resize to 3x (h-24 = 96px) across all pages
 - [x] VDR auto-complete automation (link files → auto-complete obligations)
+- [x] Calendar Integration - Monthly view with clickable dates showing obligations
+- [x] Custom Report Builder - Compliance Summary, Status breakdown, Category breakdown with PDF export
 
 ### P1 (Next Sprint)
 - [ ] Backend RBAC enforcement (protect API endpoints based on user roles)
@@ -199,8 +201,7 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
 
 ### P2 (Near Term)
 - [ ] Complete audit log write functionality
-- [ ] Calendar integration for deadline reminders
-- [ ] Custom report builder
+- [ ] Custom report builder enhancements (more sections, scheduling)
 
 ### P3 (Future)
 - [ ] ZambiaLii.org API integration for real legislation sync
