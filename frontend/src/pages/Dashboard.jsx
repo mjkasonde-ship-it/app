@@ -459,7 +459,7 @@ export default function Dashboard() {
               <img 
                 src={COVE_LOGO}
                 alt="Cove" 
-                className="h-12"
+                className="h-40"
               />
             </SheetTitle>
           </SheetHeader>
