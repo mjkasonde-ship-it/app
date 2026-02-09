@@ -1226,6 +1226,162 @@ async def update_ticket(ticket_id: str, status: Optional[str] = None, priority: 
         raise HTTPException(status_code=404, detail="Ticket not found")
     return {"message": "Ticket updated"}
 
+# VDR (Virtual Data Room) Routes
+@api_router.get("/vdr/files")
+async def get_vdr_files(company_id: Optional[str] = None, folder: Optional[str] = None):
+    query = {}
+    if company_id:
+        query["company_id"] = company_id
+    if folder:
+        query["folder"] = folder
+    
+    files = await db.vdr_files.find(query, {"_id": 0}).sort("uploaded_at", -1).to_list(500)
+    return {"files": files, "count": len(files)}
+
+@api_router.post("/vdr/upload")
+async def upload_vdr_file(file_data: VDRFileCreate):
+    # Check if file with same name exists in folder
+    existing = await db.vdr_files.find_one({
+        "name": file_data.name,
+        "folder": file_data.folder,
+        "company_id": file_data.company_id
+    })
+    
+    if existing:
+        # Create new version
+        new_version = existing.get("version", 1) + 1
+        versions = existing.get("versions", [])
+        versions.append({
+            "version": existing.get("version", 1),
+            "uploaded_by": existing.get("uploaded_by"),
+            "uploaded_at": existing.get("uploaded_at")
+        })
+        
+        await db.vdr_files.update_one(
+            {"id": existing["id"]},
+            {"$set": {
+                "version": new_version,
+                "versions": versions,
+                "uploaded_by": file_data.uploaded_by,
+                "uploaded_at": datetime.now(timezone.utc).isoformat(),
+                "size": file_data.size
+            }}
+        )
+        
+        file_id = existing["id"]
+    else:
+        # Create new file
+        file_doc = VDRFile(
+            name=file_data.name,
+            folder=file_data.folder,
+            company_id=file_data.company_id,
+            size=file_data.size,
+            mime_type=file_data.mime_type,
+            uploaded_by=file_data.uploaded_by,
+            linked_obligation_id=file_data.linked_obligation_id
+        )
+        
+        await db.vdr_files.insert_one(file_doc.model_dump())
+        file_id = file_doc.id
+    
+    # If linked to obligation, update its status
+    if file_data.linked_obligation_id:
+        await db.obligations.update_one(
+            {"id": file_data.linked_obligation_id},
+            {"$set": {"status": "completed"}}
+        )
+    
+    return {"message": "File uploaded", "file_id": file_id}
+
+@api_router.delete("/vdr/files/{file_id}")
+async def delete_vdr_file(file_id: str):
+    result = await db.vdr_files.delete_one({"id": file_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="File not found")
+    return {"message": "File deleted"}
+
+@api_router.get("/vdr/files/{file_id}/versions")
+async def get_file_versions(file_id: str):
+    file = await db.vdr_files.find_one({"id": file_id}, {"_id": 0})
+    if not file:
+        raise HTTPException(status_code=404, detail="File not found")
+    return {"versions": file.get("versions", []), "current_version": file.get("version", 1)}
+
+@api_router.post("/vdr/files/{file_id}/link")
+async def link_file_to_obligation(file_id: str, obligation_id: str):
+    # Get obligation name
+    obligation = await db.obligations.find_one({"id": obligation_id}, {"_id": 0})
+    obligation_name = obligation.get("obligation") if obligation else None
+    
+    result = await db.vdr_files.update_one(
+        {"id": file_id},
+        {"$set": {
+            "linked_obligation_id": obligation_id,
+            "linked_obligation": obligation_name
+        }}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    # Update obligation status to completed
+    if obligation:
+        await db.obligations.update_one(
+            {"id": obligation_id},
+            {"$set": {"status": "completed"}}
+        )
+    
+    return {"message": "File linked to obligation", "obligation_name": obligation_name}
+
+# User Invite Route
+@api_router.post("/users/invite")
+async def invite_user(email: str, name: str, role: str, company_id: Optional[str] = None):
+    user = User(
+        email=email,
+        name=name,
+        role=role,
+        company_id=company_id,
+        status="pending"
+    )
+    await db.users.insert_one(user.model_dump())
+    return {"message": f"Invitation sent to {email}", "user_id": user.id}
+
+# Roles & Permissions Routes
+@api_router.get("/roles")
+async def get_roles(company_id: Optional[str] = None):
+    query = {}
+    if company_id:
+        query["company_id"] = company_id
+    roles = await db.roles.find(query, {"_id": 0}).to_list(100)
+    
+    # Return default roles if none exist
+    if not roles:
+        roles = [
+            {"id": "admin", "name": "Admin", "description": "Full access", "permissions": ["view_compliance", "edit_compliance", "create_compliance", "delete_compliance", "view_documents", "upload_documents", "delete_documents", "link_documents", "view_users", "invite_users", "edit_users", "delete_users", "view_settings", "edit_settings", "manage_roles"]},
+            {"id": "legal", "name": "Legal", "description": "Legal compliance", "permissions": ["view_compliance", "edit_compliance", "view_documents", "upload_documents", "link_documents", "view_users"]},
+            {"id": "hr", "name": "HR", "description": "HR compliance", "permissions": ["view_compliance", "edit_compliance", "view_documents", "upload_documents", "link_documents", "view_users"]},
+            {"id": "operations", "name": "Operations", "description": "Operations compliance", "permissions": ["view_compliance", "edit_compliance", "view_documents", "upload_documents", "link_documents", "view_users"]},
+            {"id": "finance", "name": "Finance", "description": "Financial compliance", "permissions": ["view_compliance", "edit_compliance", "view_documents", "upload_documents", "view_users"]},
+            {"id": "viewer", "name": "Viewer", "description": "Read-only access", "permissions": ["view_compliance", "view_documents", "view_users"]}
+        ]
+    return roles
+
+@api_router.post("/roles")
+async def create_role(role: Role):
+    await db.roles.insert_one(role.model_dump())
+    return {"message": "Role created", "role_id": role.id}
+
+@api_router.put("/roles/{role_id}")
+async def update_role(role_id: str, permissions: List[str]):
+    result = await db.roles.update_one(
+        {"id": role_id},
+        {"$set": {"permissions": permissions}}
+    )
+    if result.modified_count == 0:
+        # Create it if doesn't exist
+        await db.roles.insert_one({"id": role_id, "permissions": permissions})
+    return {"message": "Role permissions updated"}
+
 # Documents Routes
 @api_router.get("/documents")
 async def get_documents(company_id: Optional[str] = None, file_type: Optional[str] = None):
