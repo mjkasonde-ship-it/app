@@ -141,6 +141,27 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
   - URLs include section anchors (e.g., #section-45)
   - Mock URLs point to zambialii.org with proper fragments
 
+### Phase 6 (Calendar & Reports) - Feb 2026
+- [x] **Compliance Calendar:**
+  - `/calendar` and `/calendar/:companyId` routes
+  - Monthly calendar grid view showing compliance deadlines
+  - Color-coded severity indicators (critical=red, high=amber, medium=blue, low=green)
+  - Clickable dates open detail sheet with obligations due that day
+  - Navigation: previous/next month buttons, Today button
+  - Upcoming Deadlines sidebar showing next 30 days
+  - Detail sheet shows obligation info with "View in Compliance Matrix" button
+
+- [x] **Custom Report Builder:**
+  - `/reports` and `/reports/:companyId` routes
+  - 3 toggleable sections: Compliance Summary, Obligations by Status, Obligations by Category
+  - Clean corporate style live preview
+  - Compliance Summary: Score, Total Obligations, Completed, Critical Items
+  - Status breakdown: Visual progress bars with percentages
+  - Category breakdown: Cards with completion rates + detailed table
+  - PDF export using jspdf + jspdf-autotable
+  - Data Summary sidebar with quick stats
+  - Toggle Preview button to show/hide preview
+
 ## API Endpoints
 
 ### Core APIs
