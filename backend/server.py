@@ -678,11 +678,36 @@ def get_obligations_for_company(sector: str, sub_sector: str) -> List[dict]:
         sector_data = MOCK_OBLIGATIONS[sector_lower]
         if sub_sector in sector_data:
             for idx, obl in enumerate(sector_data[sub_sector]):
+                # Extract provision from statute name
+                statute = obl.get("statute", "")
+                provision_match = None
+                import re
+                match = re.search(r'(?:No\.|Chapter|Act|Section)\s*(\d+(?:\s*of\s*\d+)?)', statute)
+                provision = match.group(0) if match else f"Section {idx + 1}"
+                
+                # Assign owner based on category
+                category = obl.get("category", "Corporate")
+                owner_map = {
+                    "Corporate": "Legal",
+                    "Core Operations": "Operations",
+                    "Business Operations": "HR",
+                    "Environment": "Compliance"
+                }
+                owner = owner_map.get(category, "Legal")
+                
+                # Generate legal reference URL
+                slug = statute.lower().replace(' ', '-')[:50]
+                legal_url = f"https://zambialii.org/legislation/{slug}"
+                
                 obligations.append({
                     "id": f"{sector_lower}-{sub_sector.lower().replace(' ', '-')}-{idx}",
                     "sector": sector,
                     "sub_sector": sub_sector,
-                    "status": "pending",
+                    "status": "pending" if idx % 5 != 0 else "completed",  # Simulate some completed
+                    "provision": provision,
+                    "legal_reference_url": legal_url,
+                    "owner": owner,
+                    "consequences": obl.get("penalty", "Non-compliance penalties apply"),
                     **obl
                 })
     return obligations
