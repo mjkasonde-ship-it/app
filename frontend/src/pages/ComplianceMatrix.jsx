@@ -26,12 +26,16 @@ import {
   SlidersHorizontal,
   X,
   AlertCircle,
-  CircleDot
+  CircleDot,
+  CheckSquare,
+  Square,
+  Minus
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
+import { Checkbox } from "../components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "../components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
