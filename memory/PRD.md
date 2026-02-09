@@ -162,6 +162,23 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
   - Data Summary sidebar with quick stats
   - Toggle Preview button to show/hide preview
 
+### Phase 7 (Forms Repository) - Feb 2026
+- [x] **Government Compliance Forms Repository:**
+  - `/forms` and `/forms/:companyId` routes
+  - 5 category cards: Tax & Revenue, Corporate Filings, Employment & Labour, Licenses & Permits, Operations
+  - 12 government compliance form templates:
+    * Tax: Income Tax Return (ITR), VAT Return, Mineral Royalty Return
+    * Corporate: Annual Return (PACRA), Notice of Change of Directors
+    * Employment: Annual Employment Returns, NAPSA Contribution, Workers Compensation
+    * Licenses: Mining License Renewal, Environmental Impact Assessment
+    * Operations: Quarterly Production Returns, Mine Safety Certificate
+  - **Auto-populate from onboarding data:** Company Name, TPIN, Sector, Email, Address
+  - "Auto-filled" badges on pre-populated fields
+  - Attach documents from My Cove VDR
+  - Save Draft / Submit Form functionality
+  - My Forms tab tracks saved/submitted forms with status badges
+  - Forms link to compliance obligations for workflow automation
+
 ## API Endpoints
 
 ### Core APIs
