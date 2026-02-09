@@ -76,13 +76,14 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
 - [x] Detail sheet with Consequences section and AI Summary
 - [x] Backend API enhanced with provision, legal_reference_url, owner, consequences fields
 - [x] Backend /api/obligations supports status and owner query parameters
-- [x] Category Overview horizontal stacked bar chart
-- [x] Upcoming Deadlines sticky sidebar with countdown badges
-- [x] Enhanced backend /api/dashboard/stats/{company_id} with trend_data and severity_breakdown
-- [x] Interactive tooltips with contextual insights on all charts:
-  - Trend tooltip: Month label, score %, tasks completed, performance insight
-  - Severity tooltip: Priority level, obligations count, portfolio share %, action recommendation
-  - Category tooltip: Completed/remaining counts, progress %, status assessment
+- [x] **Batch Status Update Functionality:**
+  - Row checkboxes for multi-select
+  - Select All checkbox in header
+  - Bulk action bar with status buttons (Complete, In Progress, Pending)
+  - Dropdown menu for additional statuses (Non-Compliant, Overdue)
+  - Backend POST /api/obligations/bulk-status endpoint
+  - Selection auto-clears after successful update
+  - Toast notifications for update results
 
 ## API Endpoints
 
