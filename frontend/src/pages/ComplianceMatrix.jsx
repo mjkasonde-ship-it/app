@@ -163,13 +163,16 @@ export default function ComplianceMatrix() {
       
       const response = await axios.get(`${API}/obligations?${params.toString()}`);
       // Enhance obligations with new fields
-      const enhanced = response.data.map(obl => ({
-        ...obl,
-        owner: obl.owner || getOwnerFromCategory(obl.category),
-        provision: obl.provision || extractProvision(obl.statute),
-        legal_reference_url: obl.legal_reference_url || getLegalReferenceUrl(obl.statute),
-        consequences: obl.consequences || obl.penalty || "Non-compliance penalties apply"
-      }));
+      const enhanced = response.data.map(obl => {
+        const provision = obl.provision || extractProvision(obl.statute);
+        return {
+          ...obl,
+          owner: obl.owner || getOwnerFromCategory(obl.category),
+          provision: provision,
+          legal_reference_url: obl.legal_reference_url || getLegalReferenceUrl(obl.statute, provision),
+          consequences: obl.consequences || obl.penalty || "Non-compliance penalties apply"
+        };
+      });
       setObligations(enhanced);
     } catch (error) {
       console.error("Error fetching obligations:", error);
