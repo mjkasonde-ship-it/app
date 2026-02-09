@@ -13,6 +13,8 @@ import ComplianceMatrix from "./pages/ComplianceMatrix";
 import AdminConsole from "./pages/AdminConsole";
 import VDR from "./pages/VDR";
 import Settings from "./pages/Settings";
+import Calendar from "./pages/Calendar";
+import ReportBuilder from "./pages/ReportBuilder";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
