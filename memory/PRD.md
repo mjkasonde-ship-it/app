@@ -93,7 +93,8 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
 - `GET/PUT/DELETE /api/companies/{id}` - Company CRUD
 - `GET /api/obligations` - List obligations with filters (status, owner, category, severity)
 - `GET /api/obligations/{id}` - Single obligation details
-- `PATCH /api/obligations/{id}/status` - Update obligation status
+- `PATCH /api/obligations/{id}/status` - Update single obligation status
+- `POST /api/obligations/bulk-status` - Bulk update multiple obligations status
 - `POST /api/ai/summary` - Generate AI legal summary
 - `GET /api/dashboard/stats/{company_id}` - Dashboard stats with charts data
 - `GET /api/legislation/{sector}/{sub_sector}` - Get legislation with computed fields
