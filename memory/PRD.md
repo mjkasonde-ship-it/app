@@ -7,6 +7,7 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
 - **Frontend**: React with Shadcn/UI, Framer Motion, Recharts
 - **Backend**: FastAPI with MongoDB persistence
 - **AI Integration**: Claude Sonnet 4.5 via emergentintegrations library
+- **Theme**: Financial Times salmon/beige palette with Cove teal/navy branding
 
 ## User Personas
 1. **Corporate Compliance Officers** - Track obligations, manage deadlines
@@ -19,6 +20,8 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
 - AI-powered legislative summaries
 - Dashboard with compliance metrics
 - Comprehensive super admin console with RBAC
+- Virtual Data Room (My Cove) for document management
+- Role-based access control with customizable permissions
 
 ## What's Been Implemented
 
