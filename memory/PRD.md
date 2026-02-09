@@ -109,17 +109,21 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
   - New Cove teal/navy logo integrated globally
   - Updated color scheme throughout all pages
   - Playfair Display headings, Inter body text
+  - Logo resized to 3x original size (h-24 = 96px) across all pages
   
 - [x] **VDR "My Cove" Document Repository:**
   - `/vdr` and `/vdr/:companyId` routes
   - 4-folder taxonomy: Corporate, Legal, HR, Operations
   - Drag & drop file upload with react-dropzone
   - File versioning (tracks all versions per file)
-  - Auto-complete: Link files to obligations → auto-set status to "Completed"
+  - **Auto-complete Automation:** Link files to obligations → auto-set status to "Completed"
+    - Upload dialog shows compliance item dropdown
+    - Backend automatically marks linked obligation as completed
+    - Post-upload linking also triggers auto-complete
   - Version history viewing
   - File deletion with confirmation
   - Search across files
-  - Backend APIs: GET/POST/DELETE /api/vdr/files, POST /api/vdr/upload
+  - Backend APIs: GET/POST/DELETE /api/vdr/files, POST /api/vdr/upload, POST /api/vdr/files/{id}/link
   
 - [x] **IAM & RBAC System:**
   - `/settings` and `/settings/:companyId` routes
