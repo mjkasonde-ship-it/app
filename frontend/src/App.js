@@ -517,6 +517,10 @@ function App() {
           <Route path="/vdr/:companyId" element={<VDR />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/:companyId" element={<Settings />} />
+          <Route path="/calendar" element={<Calendar />} />
+          <Route path="/calendar/:companyId" element={<Calendar />} />
+          <Route path="/reports" element={<ReportBuilder />} />
+          <Route path="/reports/:companyId" element={<ReportBuilder />} />
           <Route path="/admin" element={<AdminConsole />} />
         </Routes>
       </BrowserRouter>
