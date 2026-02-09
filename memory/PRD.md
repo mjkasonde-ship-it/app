@@ -60,6 +60,24 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
 - [x] Legislation Categories cards with progress bars and critical badges
 - [x] Category Overview horizontal stacked bar chart
 - [x] Upcoming Deadlines sticky sidebar with countdown badges
+- [x] Interactive tooltips with contextual insights on all charts
+
+### Phase 4 (Compliance Matrix Refactoring) - Feb 2026
+- [x] New data model: Legislation, Provision, Action, Consequences, Owner, Status
+- [x] Minimalist table design with clean visual hierarchy
+- [x] Merged Legislation + Provision column as clickable link to zambialii.org
+- [x] Owner column with department icons (Legal, HR, Finance, Operations, Compliance)
+- [x] Status dropdown (Pending, In Progress, Completed, Non-Compliant, Overdue)
+- [x] Default sort: Non-compliant/Overdue first, then by severity, then by due date
+- [x] Status filter and Owner filter dropdowns
+- [x] Column visibility toggle dropdown
+- [x] Due date countdown badges (Xd overdue, Xd left)
+- [x] Timeline/Gantt view with owner badges and status icons
+- [x] Detail sheet with Consequences section and AI Summary
+- [x] Backend API enhanced with provision, legal_reference_url, owner, consequences fields
+- [x] Backend /api/obligations supports status and owner query parameters
+- [x] Category Overview horizontal stacked bar chart
+- [x] Upcoming Deadlines sticky sidebar with countdown badges
 - [x] Enhanced backend /api/dashboard/stats/{company_id} with trend_data and severity_breakdown
 - [x] Interactive tooltips with contextual insights on all charts:
   - Trend tooltip: Month label, score %, tasks completed, performance insight
