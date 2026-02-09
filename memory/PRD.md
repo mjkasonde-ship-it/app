@@ -103,6 +103,40 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
   - Both exports respect current filters
   - Toast notifications on successful download
 
+### Phase 5 (Platform Update) - Feb 2026
+- [x] **Visual & Branding Refactor:**
+  - Financial Times salmon/beige palette (#FFF1E5 background)
+  - New Cove teal/navy logo integrated globally
+  - Updated color scheme throughout all pages
+  - Playfair Display headings, Inter body text
+  
+- [x] **VDR "My Cove" Document Repository:**
+  - `/vdr` and `/vdr/:companyId` routes
+  - 4-folder taxonomy: Corporate, Legal, HR, Operations
+  - Drag & drop file upload with react-dropzone
+  - File versioning (tracks all versions per file)
+  - Auto-complete: Link files to obligations → auto-set status to "Completed"
+  - Version history viewing
+  - File deletion with confirmation
+  - Search across files
+  - Backend APIs: GET/POST/DELETE /api/vdr/files, POST /api/vdr/upload
+  
+- [x] **IAM & RBAC System:**
+  - `/settings` and `/settings/:companyId` routes
+  - Team management tab with user table
+  - User invitation with role assignment
+  - 7 roles: Admin, Legal, Corporate, HR, Operations, Finance, Viewer
+  - Customizable permissions matrix (15+ permissions)
+  - Permission categories: Compliance Matrix, Document Repository, User Management, Settings
+  - Toggle permissions per role with checkboxes
+  - Role detail dialog for granular permission editing
+  - Backend APIs: GET/POST/PUT /api/roles, POST /api/users/invite
+  
+- [x] **Navigation Deep-Linking:**
+  - Legislation links now deep-link to specific provisions
+  - URLs include section anchors (e.g., #section-45)
+  - Mock URLs point to zambialii.org with proper fragments
+
 ## API Endpoints
 
 ### Core APIs
@@ -118,6 +152,19 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
 - `POST /api/ai/summary` - Generate AI legal summary
 - `GET /api/dashboard/stats/{company_id}` - Dashboard stats with charts data
 - `GET /api/legislation/{sector}/{sub_sector}` - Get legislation with computed fields
+
+### VDR APIs
+- `GET /api/vdr/files` - List files by company/folder
+- `POST /api/vdr/upload` - Upload file with optional obligation linking
+- `DELETE /api/vdr/files/{file_id}` - Delete file
+- `GET /api/vdr/files/{file_id}/versions` - Get file version history
+- `POST /api/vdr/files/{file_id}/link` - Link file to obligation
+
+### IAM APIs
+- `GET /api/roles` - Get all roles with permissions
+- `POST /api/roles` - Create new role
+- `PUT /api/roles/{role_id}` - Update role permissions
+- `POST /api/users/invite` - Invite user to organization
 
 ### Admin APIs
 - `GET /api/admin/analytics` - Platform analytics with health metrics
