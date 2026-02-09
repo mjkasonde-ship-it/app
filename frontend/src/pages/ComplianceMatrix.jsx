@@ -3,6 +3,10 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { toast } from "sonner";
+import { saveAs } from "file-saver";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { 
   ArrowLeft,
   Search,
@@ -29,7 +33,10 @@ import {
   CircleDot,
   CheckSquare,
   Square,
-  Minus
+  Minus,
+  Download,
+  FileSpreadsheet,
+  RefreshCw
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { Input } from "../components/ui/input";
@@ -48,6 +55,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuLabel,
+  DropdownMenuItem,
 } from "../components/ui/dropdown-menu";
 
 const API = process.env.REACT_APP_BACKEND_URL + "/api";
