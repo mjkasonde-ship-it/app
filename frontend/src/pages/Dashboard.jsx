@@ -393,7 +393,7 @@ export default function Dashboard() {
               <img 
                 src={COVE_LOGO}
                 alt="Cove" 
-                className="h-32 cursor-pointer"
+                className="h-24 cursor-pointer"
                 onClick={() => navigate('/')}
                 data-testid="dashboard-logo"
               />
@@ -459,7 +459,7 @@ export default function Dashboard() {
               <img 
                 src={COVE_LOGO}
                 alt="Cove" 
-                className="h-32"
+                className="h-24"
               />
             </SheetTitle>
           </SheetHeader>

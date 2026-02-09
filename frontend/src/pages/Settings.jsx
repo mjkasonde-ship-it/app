@@ -260,7 +260,7 @@ export default function Settings() {
             <img 
               src={COVE_LOGO}
               alt="Cove" 
-              className="h-40 cursor-pointer"
+              className="h-24 cursor-pointer"
               onClick={() => navigate('/')}
             />
           </div>

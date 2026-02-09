@@ -284,7 +284,7 @@ const LandingPage = () => {
             <img 
               src={COVE_LOGO}
               alt="Cove" 
-              className="h-32"
+              className="h-24"
               data-testid="cove-logo"
             />
           </div>
@@ -487,7 +487,7 @@ const LandingPage = () => {
             <img 
               src={COVE_LOGO}
               alt="Cove" 
-              className="h-32 brightness-200"
+              className="h-24 brightness-200"
             />
             <p className="text-slate-400 text-sm">
               2026 Cove Legal Tech. Built for Zambian businesses.
