@@ -96,19 +96,29 @@ const getOwnerFromCategory = (category) => {
   return ownerMap[category] || "Legal";
 };
 
-// Generate legal reference URL (mock - would be real in production)
-const getLegalReferenceUrl = (statute) => {
+// Generate legal reference URL with deep-linking to specific provision
+const getLegalReferenceUrl = (statute, provision) => {
   const baseUrl = "https://zambialii.org/legislation/";
   const slug = statute.toLowerCase()
     .replace(/\s+/g, '-')
     .replace(/[^a-z0-9-]/g, '')
     .substring(0, 50);
-  return `${baseUrl}${slug}`;
+  
+  // Extract section/chapter number for deep-linking
+  let anchor = "";
+  if (provision) {
+    const sectionMatch = provision.match(/(?:Section|Chapter|No\.?|Regulation)\s*(\d+)/i);
+    if (sectionMatch) {
+      anchor = `#section-${sectionMatch[1]}`;
+    }
+  }
+  
+  return `${baseUrl}${slug}${anchor}`;
 };
 
 // Extract provision from statute name
 const extractProvision = (statute) => {
-  const match = statute.match(/(?:No\.|Chapter|Act)\s*(\d+(?:\s*of\s*\d+)?)/i);
+  const match = statute.match(/(?:No\.|Chapter|Act|Section)\s*(\d+(?:\s*of\s*\d+)?)/i);
   return match ? match[0] : "See Full Text";
 };
 
