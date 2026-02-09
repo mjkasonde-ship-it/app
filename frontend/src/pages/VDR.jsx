@@ -185,38 +185,34 @@ export default function VDR() {
     try {
       for (let i = 0; i < pendingFiles.length; i++) {
         const file = pendingFiles[i];
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('folder', activeFolder);
-        formData.append('company_id', companyId || '');
-        if (selectedObligation) {
-          formData.append('linked_obligation_id', selectedObligation);
-        }
+        
+        // Send JSON data to backend
+        const fileData = {
+          name: file.name,
+          folder: activeFolder,
+          company_id: companyId || null,
+          size: file.size,
+          mime_type: file.type || 'application/octet-stream',
+          uploaded_by: 'User',
+          linked_obligation_id: selectedObligation || null
+        };
 
-        await axios.post(`${API}/vdr/upload`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-          onUploadProgress: (progressEvent) => {
-            const percentCompleted = Math.round(((i + (progressEvent.loaded / progressEvent.total)) / pendingFiles.length) * 100);
-            setUploadProgress(percentCompleted);
-          }
-        });
+        await axios.post(`${API}/vdr/upload`, fileData);
+        
+        // Update progress
+        setUploadProgress(Math.round(((i + 1) / pendingFiles.length) * 100));
       }
 
       toast.success(`${pendingFiles.length} file(s) uploaded successfully`);
       
-      // If linked to obligation, mark it as completed
+      // Backend already marks obligation as completed when linked_obligation_id is provided
       if (selectedObligation) {
-        try {
-          await axios.patch(`${API}/obligations/${selectedObligation}/status`, null, {
-            params: { status: 'completed' }
-          });
-          toast.success("Linked compliance item marked as Completed");
-        } catch (err) {
-          console.error("Error updating obligation:", err);
-        }
+        const linkedObligation = obligations.find(o => o.id === selectedObligation);
+        toast.success(`"${linkedObligation?.obligation}" marked as Completed`);
       }
       
       fetchFiles();
+      fetchObligations(); // Refresh obligations to reflect status change
       setUploadOpen(false);
       setPendingFiles([]);
       setSelectedObligation("");
