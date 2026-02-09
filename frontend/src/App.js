@@ -11,9 +11,14 @@ import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import ComplianceMatrix from "./pages/ComplianceMatrix";
 import AdminConsole from "./pages/AdminConsole";
+import VDR from "./pages/VDR";
+import Settings from "./pages/Settings";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
+
+// New Cove logo
+const COVE_LOGO = "https://customer-assets.emergentagent.com/job_ede56879-e7c8-4696-b14b-f3e4205ad2d7/artifacts/vpnavke8_Cove%20clean%20logo.png";
 
 // Context for global state
 export const AppContext = {
