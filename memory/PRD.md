@@ -179,6 +179,26 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
   - My Forms tab tracks saved/submitted forms with status badges
   - Forms link to compliance obligations for workflow automation
 
+### Phase 8 (LLM Data Transformation) - Feb 2026
+- [x] **Plain Language Compliance Rewrite:**
+  - LLM-powered transformation of legal obligations into 5-section plain language format
+  - Integration with Claude Sonnet 4.5 via emergentintegrations library
+  - **5 Sections:**
+    1. Statute & Jurisdiction (blue) - Law name, act number, enforcing body
+    2. Core Obligations (green) - Specific actions required
+    3. Practical Implications (purple) - Day-to-day operational impact, responsible departments
+    4. Key Deadlines & Triggers (amber) - Due dates, frequencies, triggering events
+    5. Non-Compliance Risks (red) - Penalties, enforcement actions, reputational risks
+  - **Backend APIs:**
+    - `POST /api/obligations/{id}/rewrite` - Rewrite single obligation to 5-section format
+    - `POST /api/obligations/rewrite-batch` - Batch rewrite with background processing
+    - `GET /api/obligations/rewrite-status` - Get count of rewritten vs pending obligations
+  - **Frontend Updates:**
+    - Detail sheet displays 5-section color-coded cards when summary exists
+    - "Generate" button for obligations without plain_language_summary
+    - Real-time UI update after generation
+  - `plain_language_summary` field added to Obligation model (Dict with 5 keys)
+
 ## API Endpoints
 
 ### Core APIs
