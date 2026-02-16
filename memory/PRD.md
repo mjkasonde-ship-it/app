@@ -199,7 +199,11 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
     - Real-time UI update after generation
     - **"Rewrite All" button** in toolbar - batch processes up to 20 obligations at a time with progress updates
     - **Section reference links** - Each row shows statute name + clickable section reference (e.g., "Section 45") linking to legislation
+    - **Legal Summary column** - Magic Circle law firm style summaries (formal, precise, authoritative)
+      - New `POST /api/obligations/{id}/legal-summary` endpoint generates summaries individually
+      - Summaries displayed in italic text with "Generate" button for empty cells
   - `plain_language_summary` field added to Obligation model (Dict with 5 keys)
+  - `legal_summary` field added for Magic Circle style summaries (string)
 
 ## API Endpoints
 
