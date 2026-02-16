@@ -1223,27 +1223,6 @@ async def rewrite_obligations_batch(request: RewriteAllRequest, background_tasks
         "status": "processing"
     }
 
-@api_router.get("/obligations/rewrite-status")
-async def get_rewrite_status(company_id: Optional[str] = None, sector: Optional[str] = None):
-    """Get status of how many obligations have been rewritten"""
-    base_query = {}
-    if company_id:
-        base_query["company_id"] = company_id
-    if sector:
-        base_query["sector"] = sector
-    
-    total = await db.obligations.count_documents(base_query)
-    
-    rewritten_query = {**base_query, "plain_language_summary": {"$exists": True, "$ne": None}}
-    rewritten = await db.obligations.count_documents(rewritten_query)
-    
-    return {
-        "total": total,
-        "rewritten": rewritten,
-        "pending": total - rewritten,
-        "percentage": round((rewritten / total * 100) if total > 0 else 0, 1)
-    }
-
 # User Management Routes
 @api_router.post("/users", response_model=User)
 async def create_user(user_data: UserCreate):
