@@ -1140,7 +1140,7 @@ export default function ComplianceMatrix() {
 
       {/* Detail Sheet */}
       <Sheet open={!!selectedObligation} onOpenChange={() => setSelectedObligation(null)}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto" data-testid="obligation-detail-sheet">
+        <SheetContent className="w-full sm:max-w-xl overflow-y-auto" data-testid="obligation-detail-sheet">
           {selectedObligation && (
             <>
               <SheetHeader className="pb-4 border-b">
@@ -1182,69 +1182,170 @@ export default function ComplianceMatrix() {
                   </div>
                 </div>
 
-                {/* Action Required */}
-                <div>
-                  <h4 className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Action Required</h4>
-                  <p className="text-sm text-slate-700">{selectedObligation.action_required}</p>
-                </div>
-
-                {/* Consequences */}
-                <div className="bg-amber-50/50 p-4 rounded-lg border border-amber-100">
-                  <div className="flex items-center gap-2 mb-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-600" />
-                    <h4 className="text-xs font-medium text-amber-900 uppercase tracking-wide">Consequences</h4>
-                  </div>
-                  <p className="text-sm text-amber-800">{selectedObligation.consequences}</p>
-                </div>
-
-                {/* AI Summary */}
-                <div className="border-t pt-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-amber-600" />
-                      <h4 className="text-xs font-medium text-slate-700 uppercase tracking-wide">AI Summary</h4>
+                {/* 5-Section Plain Language Summary */}
+                {selectedObligation.plain_language_summary ? (
+                  <div className="space-y-4" data-testid="plain-language-summary">
+                    {/* Section 1: Statute & Jurisdiction */}
+                    <div className="bg-blue-50/50 p-4 rounded-lg border border-blue-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Scale className="w-4 h-4 text-blue-600" />
+                        <h4 className="text-xs font-semibold text-blue-900 uppercase tracking-wide">1. Statute & Jurisdiction</h4>
+                      </div>
+                      <p className="text-sm text-blue-800">{selectedObligation.plain_language_summary.statute_jurisdiction}</p>
                     </div>
-                    {!aiSummary && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={fetchAISummary}
-                        disabled={loadingAI}
-                        className="h-7 text-xs"
-                        data-testid="generate-ai-summary-btn"
+
+                    {/* Section 2: Core Obligations */}
+                    <div className="bg-emerald-50/50 p-4 rounded-lg border border-emerald-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle className="w-4 h-4 text-emerald-600" />
+                        <h4 className="text-xs font-semibold text-emerald-900 uppercase tracking-wide">2. Core Obligations</h4>
+                      </div>
+                      <p className="text-sm text-emerald-800">{selectedObligation.plain_language_summary.core_obligations}</p>
+                    </div>
+
+                    {/* Section 3: Practical Implications */}
+                    <div className="bg-purple-50/50 p-4 rounded-lg border border-purple-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Briefcase className="w-4 h-4 text-purple-600" />
+                        <h4 className="text-xs font-semibold text-purple-900 uppercase tracking-wide">3. Practical Implications</h4>
+                      </div>
+                      <p className="text-sm text-purple-800">{selectedObligation.plain_language_summary.practical_implications}</p>
+                    </div>
+
+                    {/* Section 4: Key Deadlines & Triggers */}
+                    <div className="bg-amber-50/50 p-4 rounded-lg border border-amber-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Clock className="w-4 h-4 text-amber-600" />
+                        <h4 className="text-xs font-semibold text-amber-900 uppercase tracking-wide">4. Key Deadlines & Triggers</h4>
+                      </div>
+                      <p className="text-sm text-amber-800">{selectedObligation.plain_language_summary.deadlines_triggers}</p>
+                    </div>
+
+                    {/* Section 5: Non-Compliance Risks */}
+                    <div className="bg-red-50/50 p-4 rounded-lg border border-red-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertTriangle className="w-4 h-4 text-red-600" />
+                        <h4 className="text-xs font-semibold text-red-900 uppercase tracking-wide">5. Non-Compliance Risks</h4>
+                      </div>
+                      <p className="text-sm text-red-800">{selectedObligation.plain_language_summary.non_compliance_risks}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Fallback: Original Action Required */}
+                    <div>
+                      <h4 className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Action Required</h4>
+                      <p className="text-sm text-slate-700">{selectedObligation.action_required}</p>
+                    </div>
+
+                    {/* Fallback: Original Consequences */}
+                    <div className="bg-amber-50/50 p-4 rounded-lg border border-amber-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-600" />
+                        <h4 className="text-xs font-medium text-amber-900 uppercase tracking-wide">Consequences</h4>
+                      </div>
+                      <p className="text-sm text-amber-800">{selectedObligation.consequences}</p>
+                    </div>
+
+                    {/* Generate Plain Language Button */}
+                    <div className="border-t pt-5">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-emerald-600" />
+                          <h4 className="text-xs font-medium text-slate-700 uppercase tracking-wide">Plain Language Summary</h4>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={async () => {
+                            setLoadingAI(true);
+                            try {
+                              const response = await axios.post(`${API}/obligations/${selectedObligation.id}/rewrite`);
+                              if (response.data.plain_language_summary) {
+                                setSelectedObligation({
+                                  ...selectedObligation,
+                                  plain_language_summary: response.data.plain_language_summary
+                                });
+                                // Also update in the main list
+                                setObligations(prev => prev.map(o => 
+                                  o.id === selectedObligation.id 
+                                    ? { ...o, plain_language_summary: response.data.plain_language_summary }
+                                    : o
+                                ));
+                                toast.success("Plain language summary generated");
+                              }
+                            } catch (error) {
+                              console.error("Error generating summary:", error);
+                              toast.error("Failed to generate summary");
+                            } finally {
+                              setLoadingAI(false);
+                            }
+                          }}
+                          disabled={loadingAI}
+                          className="h-7 text-xs gap-1.5"
+                          data-testid="generate-plain-language-btn"
+                        >
+                          <Sparkles className="w-3 h-3" />
+                          {loadingAI ? "Generating..." : "Generate"}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        Generate an AI-powered 5-section breakdown of this obligation in plain English for non-lawyers.
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {/* AI Summary (legacy) - only show if no plain language summary */}
+                {!selectedObligation.plain_language_summary && (
+                  <div className="border-t pt-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-amber-600" />
+                        <h4 className="text-xs font-medium text-slate-700 uppercase tracking-wide">Quick AI Summary</h4>
+                      </div>
+                      {!aiSummary && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={fetchAISummary}
+                          disabled={loadingAI}
+                          className="h-7 text-xs"
+                          data-testid="generate-ai-summary-btn"
+                        >
+                          {loadingAI ? "Generating..." : "Quick Summary"}
+                        </Button>
+                      )}
+                    </div>
+
+                    {aiSummary && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-slate-50 p-4 rounded-lg text-sm"
+                        data-testid="ai-summary-content"
                       >
-                        {loadingAI ? "Generating..." : "Generate"}
-                      </Button>
+                        <p className="text-slate-700 mb-3">{aiSummary.summary}</p>
+                        {aiSummary.key_points?.length > 0 && (
+                          <ul className="space-y-1.5">
+                            {aiSummary.key_points.map((point, idx) => (
+                              <li key={idx} className="flex items-start gap-2 text-slate-600">
+                                <CheckCircle className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                                <span className="text-xs">{point}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        <div className="flex items-center gap-3 pt-3 mt-3 border-t border-slate-200">
+                          <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                            <BadgeCheck className="w-3 h-3" />
+                            {aiSummary.approved_by}
+                          </span>
+                        </div>
+                      </motion.div>
                     )}
                   </div>
-
-                  {aiSummary && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="bg-slate-50 p-4 rounded-lg text-sm"
-                      data-testid="ai-summary-content"
-                    >
-                      <p className="text-slate-700 mb-3">{aiSummary.summary}</p>
-                      {aiSummary.key_points?.length > 0 && (
-                        <ul className="space-y-1.5">
-                          {aiSummary.key_points.map((point, idx) => (
-                            <li key={idx} className="flex items-start gap-2 text-slate-600">
-                              <CheckCircle className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                              <span className="text-xs">{point}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      <div className="flex items-center gap-3 pt-3 mt-3 border-t border-slate-200">
-                        <span className="text-[10px] text-slate-500 flex items-center gap-1">
-                          <BadgeCheck className="w-3 h-3" />
-                          {aiSummary.approved_by}
-                        </span>
-                      </div>
-                    </motion.div>
-                  )}
-                </div>
+                )}
 
                 {/* Actions */}
                 <div className="flex gap-2 pt-4">
