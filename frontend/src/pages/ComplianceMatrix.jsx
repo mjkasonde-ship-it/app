@@ -198,6 +198,79 @@ export default function ComplianceMatrix() {
     { id: "7", statute: "Mining Regulations 2019", provision: "Regulation 23", legal_reference_url: "https://zambialii.org/legislation/mining-regulations", obligation: "Quarterly Production Reports", action_required: "Submit mineral production statistics", consequences: "ZMW 50,000 fine per quarter missed", due_date: "2026-04-15", severity: "medium", category: "Core Operations", penalty: "ZMW 50,000 fine", frequency: "Quarterly", responsible_authority: "Ministry of Mines", owner: "Operations", status: "completed" },
   ];
 
+  // Fetch rewrite status
+  const fetchRewriteStatus = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (companyId) params.append('company_id', companyId);
+      const response = await axios.get(`${API}/obligations/rewrite-status?${params.toString()}`);
+      setRewriteStatus(response.data);
+    } catch (error) {
+      console.error("Error fetching rewrite status:", error);
+    }
+  };
+
+  // Handle Rewrite All
+  const handleRewriteAll = async () => {
+    if (rewriteStatus.pending === 0) {
+      toast.info("All obligations have already been rewritten");
+      return;
+    }
+    
+    setIsRewriting(true);
+    toast.info(`Starting batch rewrite of ${rewriteStatus.pending} obligations...`);
+    
+    try {
+      // Get obligations without plain_language_summary
+      const obligationsToRewrite = obligations.filter(o => !o.plain_language_summary);
+      let processed = 0;
+      let errors = 0;
+      
+      for (const obl of obligationsToRewrite.slice(0, 20)) { // Process max 20 at a time
+        try {
+          const response = await axios.post(`${API}/obligations/${obl.id}/rewrite`);
+          if (response.data.plain_language_summary) {
+            // Update local state
+            setObligations(prev => prev.map(o => 
+              o.id === obl.id 
+                ? { ...o, plain_language_summary: response.data.plain_language_summary }
+                : o
+            ));
+            processed++;
+            // Update status display
+            setRewriteStatus(prev => ({
+              ...prev,
+              rewritten: prev.rewritten + 1,
+              pending: prev.pending - 1,
+              percentage: Math.round(((prev.rewritten + 1) / prev.total) * 100 * 10) / 10
+            }));
+          }
+        } catch (error) {
+          console.error(`Error rewriting obligation ${obl.id}:`, error);
+          errors++;
+        }
+        // Small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      if (errors > 0) {
+        toast.warning(`Rewritten ${processed} obligations. ${errors} failed.`);
+      } else {
+        toast.success(`Successfully rewritten ${processed} obligations`);
+      }
+      
+      // Refresh status
+      fetchRewriteStatus();
+      
+    } catch (error) {
+      console.error("Error in batch rewrite:", error);
+      toast.error("Failed to start batch rewrite");
+    } finally {
+      setIsRewriting(false);
+    }
+  };
+
+
   // Sort and filter obligations - Critical/Non-compliant at top by default
   const filteredObligations = useMemo(() => {
     let filtered = obligations.filter(obl => {
