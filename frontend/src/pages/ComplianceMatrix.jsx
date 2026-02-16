@@ -81,8 +81,9 @@ const STATUSES = [
 // Column visibility options
 const COLUMNS = [
   { id: "legislation", label: "Legislation", default: true },
+  { id: "legalSummary", label: "Legal Summary", default: true },
   { id: "action", label: "Action Required", default: true },
-  { id: "consequences", label: "Consequences", default: true },
+  { id: "consequences", label: "Consequences", default: false },
   { id: "owner", label: "Owner", default: true },
   { id: "dueDate", label: "Due Date", default: true },
   { id: "status", label: "Status", default: true }
