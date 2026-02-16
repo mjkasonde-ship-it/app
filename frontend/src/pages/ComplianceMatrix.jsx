@@ -145,9 +145,14 @@ export default function ComplianceMatrix() {
   // Batch selection state
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkUpdating, setBulkUpdating] = useState(false);
+  
+  // Rewrite all state
+  const [rewriteStatus, setRewriteStatus] = useState({ total: 0, rewritten: 0, pending: 0, percentage: 0 });
+  const [isRewriting, setIsRewriting] = useState(false);
 
   useEffect(() => {
     fetchObligations();
+    fetchRewriteStatus();
   }, [companyId, categoryFilter]);
 
   // Clear selection when filters change
