@@ -727,16 +727,144 @@ DEFAULT_PLANS = [
 def get_obligations_for_company(sector: str, sub_sector: str) -> List[dict]:
     obligations = []
     sector_lower = sector.lower()
+    
+    # Mapping of statute types to their section reference format and base URL
+    LEGISLATION_URLS = {
+        "Mines and Minerals Development Act No. 11 of 2015": {
+            "base_url": "https://zambialii.org/akn/zm/act/2015/11/eng@2015-09-04",
+            "sections": {
+                "Large-Scale Mining License Renewal": ("Section 30", "#sec_30"),
+                "Quarterly Production Returns": ("Section 67", "#sec_67"),
+                "Mine Safety Certificate": ("Section 82", "#sec_82"),
+                "Blasting License Renewal": ("Section 85", "#sec_85"),
+                "Precious Metals Trading License": ("Section 54", "#sec_54"),
+                "Precious Metals Production Declaration": ("Section 68", "#sec_68"),
+                "Industrial Minerals License Renewal": ("Section 35", "#sec_35"),
+                "Quarry Operating License": ("Section 37", "#sec_37"),
+                "Gemstone Mining License": ("Section 40", "#sec_40"),
+                "Gemstone Trading License": ("Section 55", "#sec_55"),
+                "Gemstone Export Permit": ("Section 58", "#sec_58"),
+                "Mine Closure Plan Update": ("Section 78", "#sec_78"),
+                "Annual Mining License Renewal": ("Section 45", "#sec_45"),
+            }
+        },
+        "Environmental Management Act No. 12 of 2011": {
+            "base_url": "https://zambialii.org/akn/zm/act/2011/12/eng@2011-04-15",
+            "sections": {
+                "Environmental Impact Assessment Report": ("Section 29", "#sec_29"),
+                "Annual Environmental Audit": ("Section 32", "#sec_32"),
+                "Waste Management License": ("Section 55", "#sec_55"),
+                "Construction EIA Approval": ("Section 29", "#sec_29"),
+                "Construction Waste Disposal Plan": ("Section 56", "#sec_56"),
+                "Dust Suppression Compliance": ("Section 48", "#sec_48"),
+                "Mercury Use Permit": ("Section 61", "#sec_61"),
+            }
+        },
+        "Companies Act No. 10 of 2017": {
+            "base_url": "https://zambialii.org/akn/zm/act/2017/10/eng@2017-08-17",
+            "sections": {
+                "Annual Return Filing": ("Section 256", "#sec_256"),
+            }
+        },
+        "Income Tax Act Chapter 323": {
+            "base_url": "https://zambialii.org/akn/zm/act/1966/67/eng",
+            "sections": {
+                "Corporate Tax Filing": ("Section 52", "#sec_52"),
+                "Mineral Royalty Payment": ("Section 82", "#sec_82"),
+                "Withholding Tax on Subcontractors": ("Section 82A", "#sec_82A"),
+                "Windfall Tax on Precious Metals": ("Section 82B", "#sec_82B"),
+            }
+        },
+        "Employment Act Chapter 268": {
+            "base_url": "https://zambialii.org/akn/zm/act/1965/57/eng",
+            "sections": {
+                "Annual Employment Returns": ("Section 127", "#sec_127"),
+                "Employment Contracts Registration": ("Section 15", "#sec_15"),
+            }
+        },
+        "Workers Compensation Act Chapter 271": {
+            "base_url": "https://zambialii.org/akn/zm/act/1999/10/eng",
+            "sections": {
+                "Workers Compensation Coverage": ("Section 15", "#sec_15"),
+                "Workers Compensation Insurance Renewal": ("Section 15", "#sec_15"),
+                "Construction Workers Insurance": ("Section 15", "#sec_15"),
+            }
+        },
+        "Value Added Tax Act Chapter 331": {
+            "base_url": "https://zambialii.org/akn/zm/act/1995/4/eng",
+            "sections": {
+                "VAT Returns Filing": ("Section 26", "#sec_26"),
+            }
+        },
+        "National Pension Scheme Act No. 40 of 1996": {
+            "base_url": "https://zambialii.org/akn/zm/act/1996/40/eng",
+            "sections": {
+                "NAPSA Contributions": ("Section 15", "#sec_15"),
+            }
+        },
+        "Occupational Health and Safety Act No. 36 of 2010": {
+            "base_url": "https://zambialii.org/akn/zm/act/2010/36/eng",
+            "sections": {
+                "OHS Compliance Certificate": ("Section 18", "#sec_18"),
+                "Construction Site Safety Plan": ("Section 23", "#sec_23"),
+            }
+        },
+        "Water Resources Management Act No. 21 of 2011": {
+            "base_url": "https://zambialii.org/akn/zm/act/2011/21/eng",
+            "sections": {
+                "Water Abstraction Permit": ("Section 42", "#sec_42"),
+                "River/Stream Crossing Permit": ("Section 48", "#sec_48"),
+            }
+        },
+        "Anti-Money Laundering Act No. 44 of 2010": {
+            "base_url": "https://zambialii.org/akn/zm/act/2010/44/eng",
+            "sections": {
+                "AML Compliance Report": ("Section 17", "#sec_17"),
+                "Customer Due Diligence Records": ("Section 22", "#sec_22"),
+                "Transaction Reporting": ("Section 29", "#sec_29"),
+            }
+        },
+        "National Council for Construction Act No. 13 of 2003": {
+            "base_url": "https://zambialii.org/akn/zm/act/2003/13/eng",
+            "sections": {
+                "NCC Contractor Registration": ("Section 18", "#sec_18"),
+            }
+        },
+        "Urban and Regional Planning Act No. 3 of 2015": {
+            "base_url": "https://zambialii.org/akn/zm/act/2015/3/eng",
+            "sections": {
+                "Planning Permission": ("Section 47", "#sec_47"),
+            }
+        },
+    }
+    
     if sector_lower in MOCK_OBLIGATIONS:
         sector_data = MOCK_OBLIGATIONS[sector_lower]
         if sub_sector in sector_data:
             for idx, obl in enumerate(sector_data[sub_sector]):
-                # Extract provision from statute name
                 statute = obl.get("statute", "")
-                provision_match = None
-                import re
-                match = re.search(r'(?:No\.|Chapter|Act|Section)\s*(\d+(?:\s*of\s*\d+)?)', statute)
-                provision = match.group(0) if match else f"Section {idx + 1}"
+                obligation_name = obl.get("obligation", "")
+                
+                # Get precise section reference and URL
+                provision = f"Section {idx + 1}"  # Default fallback
+                legal_url = f"https://zambialii.org/legislation"  # Default fallback
+                
+                if statute in LEGISLATION_URLS:
+                    leg_data = LEGISLATION_URLS[statute]
+                    base_url = leg_data["base_url"]
+                    sections = leg_data["sections"]
+                    
+                    if obligation_name in sections:
+                        section_ref, anchor = sections[obligation_name]
+                        provision = section_ref
+                        legal_url = f"{base_url}{anchor}"
+                    else:
+                        # Try partial match
+                        for obl_key, (section_ref, anchor) in sections.items():
+                            if obl_key.lower() in obligation_name.lower() or obligation_name.lower() in obl_key.lower():
+                                provision = section_ref
+                                legal_url = f"{base_url}{anchor}"
+                                break
                 
                 # Assign owner based on category
                 category = obl.get("category", "Corporate")
@@ -748,15 +876,11 @@ def get_obligations_for_company(sector: str, sub_sector: str) -> List[dict]:
                 }
                 owner = owner_map.get(category, "Legal")
                 
-                # Generate legal reference URL
-                slug = statute.lower().replace(' ', '-')[:50]
-                legal_url = f"https://zambialii.org/legislation/{slug}"
-                
                 obligations.append({
                     "id": f"{sector_lower}-{sub_sector.lower().replace(' ', '-')}-{idx}",
                     "sector": sector,
                     "sub_sector": sub_sector,
-                    "status": "pending" if idx % 5 != 0 else "completed",  # Simulate some completed
+                    "status": "pending" if idx % 5 != 0 else "completed",
                     "provision": provision,
                     "legal_reference_url": legal_url,
                     "owner": owner,
