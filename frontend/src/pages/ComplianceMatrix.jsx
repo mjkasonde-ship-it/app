@@ -788,6 +788,30 @@ export default function ComplianceMatrix() {
                 <span className="hidden sm:inline">Mark Overdue</span>
               </Button>
 
+              {/* Rewrite All Button */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-9 gap-1.5 text-purple-600 border-purple-200 hover:bg-purple-50 hover:text-purple-700"
+                onClick={handleRewriteAll}
+                disabled={isRewriting || rewriteStatus.pending === 0}
+                data-testid="rewrite-all-btn"
+              >
+                {isRewriting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Wand2 className="w-3.5 h-3.5" />
+                )}
+                <span className="hidden sm:inline">
+                  {isRewriting ? "Rewriting..." : `Rewrite All`}
+                </span>
+                {rewriteStatus.pending > 0 && !isRewriting && (
+                  <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0 h-4 bg-purple-100 text-purple-700">
+                    {rewriteStatus.pending}
+                  </Badge>
+                )}
+              </Button>
+
               {/* View Toggle */}
               <div className="flex border rounded-lg overflow-hidden">
                 <Button
