@@ -254,6 +254,7 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
 - [x] Calendar Integration - Monthly view with clickable dates showing obligations
 - [x] Custom Report Builder - Compliance Summary, Status breakdown, Category breakdown with PDF export
 - [x] Forms Repository - 12 government compliance forms with auto-populate from onboarding data
+- [x] **LLM Data Transformation** - Rewrite compliance obligations into 5-section plain language format using Claude Sonnet 4.5
 
 ### P1 (Next Sprint)
 - [ ] Backend RBAC enforcement (protect API endpoints based on user roles)
