@@ -212,6 +212,9 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
 - `POST /api/obligations/mark-overdue` - Auto-mark past due obligations as overdue
 - `GET /api/obligations/export` - Export obligations data
 - `POST /api/ai/summary` - Generate AI legal summary
+- `POST /api/obligations/{id}/rewrite` - Rewrite obligation to 5-section plain language format
+- `POST /api/obligations/rewrite-batch` - Batch rewrite obligations in background
+- `GET /api/obligations/rewrite-status` - Get rewrite progress (total, rewritten, pending, percentage)
 - `GET /api/dashboard/stats/{company_id}` - Dashboard stats with charts data
 - `GET /api/legislation/{sector}/{sub_sector}` - Get legislation with computed fields
 
