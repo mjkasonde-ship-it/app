@@ -1060,6 +1060,168 @@ Provide a JSON response with 'summary' and 'key_points' fields."""
             key_points=["Ensure timely submission", "Maintain documentation", "Consult legal counsel"]
         )
 
+# Rewrite obligation to 5-section plain language format
+class RewriteObligationRequest(BaseModel):
+    obligation_id: str
+
+class RewriteAllRequest(BaseModel):
+    company_id: Optional[str] = None
+    sector: Optional[str] = None
+    limit: int = 10  # Process in batches
+
+@api_router.post("/obligations/{obligation_id}/rewrite")
+async def rewrite_single_obligation(obligation_id: str):
+    """Rewrite a single obligation into 5-section plain language format using Claude"""
+    obligation = await db.obligations.find_one({"id": obligation_id}, {"_id": 0})
+    if not obligation:
+        raise HTTPException(status_code=404, detail="Obligation not found")
+    
+    emergent_key = os.environ.get('EMERGENT_LLM_KEY')
+    if not emergent_key:
+        raise HTTPException(status_code=500, detail="LLM API key not configured")
+    
+    try:
+        chat = LlmChat(
+            api_key=emergent_key,
+            session_id=f"cove-rewrite-{uuid.uuid4()}",
+            system_message="""You are a Zambian legal expert who simplifies complex legal language for non-lawyers. 
+            You transform dense legal statutes into clear, actionable guidance for corporate compliance officers.
+            Always provide accurate, practical information based on Zambian law."""
+        ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+        
+        prompt = f"""Rewrite this Zambian compliance obligation into a 5-section plain language format.
+
+ORIGINAL DATA:
+- Statute: {obligation.get('statute', 'N/A')}
+- Provision: {obligation.get('provision', 'N/A')}
+- Obligation: {obligation.get('obligation', 'N/A')}
+- Action Required: {obligation.get('action_required', 'N/A')}
+- Consequences/Penalty: {obligation.get('consequences', obligation.get('penalty', 'N/A'))}
+- Frequency: {obligation.get('frequency', 'N/A')}
+- Responsible Authority: {obligation.get('responsible_authority', 'N/A')}
+- Due Date: {obligation.get('due_date', 'N/A')}
+- Severity: {obligation.get('severity', 'N/A')}
+
+Transform this into a JSON object with exactly these 5 keys:
+
+1. "statute_jurisdiction": A clear statement of what law this is (full name, act number) and which government body enforces it. Include the specific section/provision number.
+
+2. "core_obligations": What exactly must the company DO? List the specific actions, documents, or filings required in plain language. Be specific about quantities, formats, and requirements.
+
+3. "practical_implications": What does this mean for day-to-day operations? Who in the company should handle this (Legal, HR, Finance, Operations)? What systems or processes need to be in place?
+
+4. "deadlines_triggers": When must this be done? Include specific dates, frequencies (annual, quarterly, monthly), and any triggering events. Mention grace periods if applicable.
+
+5. "non_compliance_risks": What happens if the company fails to comply? List specific penalties (fines in ZMW), enforcement actions (license suspension, prosecution), and reputational risks.
+
+Respond ONLY with valid JSON, no markdown formatting or explanation."""
+
+        user_message = UserMessage(text=prompt)
+        response = await chat.send_message(user_message)
+        
+        import json
+        response_text = response.strip()
+        # Clean up markdown formatting if present
+        if response_text.startswith("```json"):
+            response_text = response_text[7:]
+        if response_text.startswith("```"):
+            response_text = response_text[3:]
+        if response_text.endswith("```"):
+            response_text = response_text[:-3]
+        
+        parsed = json.loads(response_text.strip())
+        
+        # Validate all 5 sections exist
+        required_keys = ["statute_jurisdiction", "core_obligations", "practical_implications", "deadlines_triggers", "non_compliance_risks"]
+        plain_language_summary = {}
+        for key in required_keys:
+            plain_language_summary[key] = parsed.get(key, "Information not available")
+        
+        # Update the obligation in database
+        await db.obligations.update_one(
+            {"id": obligation_id},
+            {"$set": {"plain_language_summary": plain_language_summary}}
+        )
+        
+        return {
+            "message": "Obligation rewritten successfully",
+            "obligation_id": obligation_id,
+            "plain_language_summary": plain_language_summary
+        }
+        
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON parse error in rewrite: {e}, response: {response[:500]}")
+        raise HTTPException(status_code=500, detail="Failed to parse LLM response")
+    except Exception as e:
+        logger.error(f"Rewrite obligation error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to rewrite obligation: {str(e)}")
+
+@api_router.post("/obligations/rewrite-batch")
+async def rewrite_obligations_batch(request: RewriteAllRequest, background_tasks: BackgroundTasks):
+    """Start batch rewriting of obligations - processes in background"""
+    query = {}
+    if request.company_id:
+        query["company_id"] = request.company_id
+    if request.sector:
+        query["sector"] = request.sector
+    
+    # Find obligations without plain_language_summary
+    query["plain_language_summary"] = {"$exists": False}
+    
+    obligations = await db.obligations.find(query, {"_id": 0, "id": 1}).limit(request.limit).to_list(request.limit)
+    
+    if not obligations:
+        return {"message": "No obligations need rewriting", "count": 0}
+    
+    # Return immediately, process in background
+    async def process_batch():
+        processed = 0
+        errors = 0
+        for obl in obligations:
+            try:
+                # Small delay to avoid rate limiting
+                import asyncio
+                await asyncio.sleep(1)
+                
+                # Call the single rewrite endpoint internally
+                await rewrite_single_obligation(obl["id"])
+                processed += 1
+                logger.info(f"Rewritten obligation {obl['id']} ({processed}/{len(obligations)})")
+            except Exception as e:
+                logger.error(f"Failed to rewrite obligation {obl['id']}: {e}")
+                errors += 1
+        
+        logger.info(f"Batch rewrite complete: {processed} processed, {errors} errors")
+    
+    background_tasks.add_task(process_batch)
+    
+    return {
+        "message": f"Started batch rewrite for {len(obligations)} obligations",
+        "count": len(obligations),
+        "status": "processing"
+    }
+
+@api_router.get("/obligations/rewrite-status")
+async def get_rewrite_status(company_id: Optional[str] = None, sector: Optional[str] = None):
+    """Get status of how many obligations have been rewritten"""
+    base_query = {}
+    if company_id:
+        base_query["company_id"] = company_id
+    if sector:
+        base_query["sector"] = sector
+    
+    total = await db.obligations.count_documents(base_query)
+    
+    rewritten_query = {**base_query, "plain_language_summary": {"$exists": True, "$ne": None}}
+    rewritten = await db.obligations.count_documents(rewritten_query)
+    
+    return {
+        "total": total,
+        "rewritten": rewritten,
+        "pending": total - rewritten,
+        "percentage": round((rewritten / total * 100) if total > 0 else 0, 1)
+    }
+
 # User Management Routes
 @api_router.post("/users", response_model=User)
 async def create_user(user_data: UserCreate):
