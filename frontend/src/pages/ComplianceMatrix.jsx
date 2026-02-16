@@ -1155,17 +1155,19 @@ export default function ComplianceMatrix() {
                 <SheetTitle className="text-lg leading-tight">
                   {selectedObligation.obligation}
                 </SheetTitle>
-                <SheetDescription>
-                  <a 
-                    href={selectedObligation.legal_reference_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700"
-                  >
-                    {selectedObligation.statute}
-                    <Badge variant="outline" className="text-[10px] ml-1">{selectedObligation.provision}</Badge>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
+                <SheetDescription asChild>
+                  <div>
+                    <a 
+                      href={selectedObligation.legal_reference_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700"
+                    >
+                      {selectedObligation.statute}
+                      <span className="text-[10px] ml-1 px-1.5 py-0.5 border rounded bg-white">{selectedObligation.provision}</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
                 </SheetDescription>
               </SheetHeader>
 
