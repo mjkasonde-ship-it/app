@@ -1024,7 +1024,7 @@ export default function ComplianceMatrix() {
                                     <div className={`w-1 h-14 rounded-full flex-shrink-0 ${severityConfig.dot}`} />
                                     <div className="min-w-0 flex-1">
                                       {/* Statute name */}
-                                      <p className="text-sm font-medium text-slate-900 truncate" title={obl.statute}>
+                                      <p className="text-sm font-medium text-slate-900 line-clamp-1" title={obl.statute}>
                                         {obl.statute}
                                       </p>
                                       {/* Section reference as clickable link */}
@@ -1035,12 +1035,12 @@ export default function ComplianceMatrix() {
                                         className="inline-flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 hover:underline mt-0.5 group/link"
                                         data-testid={`section-link-${idx}`}
                                       >
-                                        <Scale className="w-3 h-3" />
-                                        <span>{obl.provision} of the {obl.statute.split(' ').slice(0, -1).join(' ')}</span>
-                                        <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover/link:opacity-100 transition-opacity" />
+                                        <Scale className="w-3 h-3 flex-shrink-0" />
+                                        <span className="truncate">{obl.provision}</span>
+                                        <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover/link:opacity-100 transition-opacity flex-shrink-0" />
                                       </a>
                                       {/* Obligation description */}
-                                      <p className="text-xs text-slate-500 mt-1 truncate" title={obl.obligation}>
+                                      <p className="text-xs text-slate-500 mt-1 line-clamp-1" title={obl.obligation}>
                                         {obl.obligation}
                                       </p>
                                     </div>
