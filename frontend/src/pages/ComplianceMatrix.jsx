@@ -958,7 +958,7 @@ export default function ComplianceMatrix() {
                             />
                           </TableHead>
                           {visibleColumns.legislation && (
-                            <TableHead className="font-medium text-slate-700 text-xs uppercase tracking-wide w-[260px]">
+                            <TableHead className="font-medium text-slate-700 text-xs uppercase tracking-wide w-[320px]">
                               Legislation
                             </TableHead>
                           )}
