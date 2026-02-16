@@ -104,6 +104,8 @@ class Obligation(BaseModel):
     status: str = "pending"  # pending, in_progress, completed, non_compliant, overdue
     # New 5-section plain language summary
     plain_language_summary: Optional[Dict[str, str]] = None
+    # Magic Circle style legal summary
+    legal_summary: Optional[str] = None
 
 class ObligationCreate(BaseModel):
     category: str
