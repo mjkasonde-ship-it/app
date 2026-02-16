@@ -36,7 +36,9 @@ import {
   Minus,
   Download,
   FileSpreadsheet,
-  RefreshCw
+  RefreshCw,
+  Wand2,
+  Loader2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { Input } from "../components/ui/input";
