@@ -876,6 +876,28 @@ async def get_all_obligations(
     obligations = await db.obligations.find(query, {"_id": 0}).to_list(1000)
     return obligations
 
+# Static obligation routes (must be before dynamic {obligation_id} route)
+@api_router.get("/obligations/rewrite-status")
+async def get_rewrite_status(company_id: Optional[str] = None, sector: Optional[str] = None):
+    """Get status of how many obligations have been rewritten"""
+    base_query = {}
+    if company_id:
+        base_query["company_id"] = company_id
+    if sector:
+        base_query["sector"] = sector
+    
+    total = await db.obligations.count_documents(base_query)
+    
+    rewritten_query = {**base_query, "plain_language_summary": {"$exists": True, "$ne": None}}
+    rewritten = await db.obligations.count_documents(rewritten_query)
+    
+    return {
+        "total": total,
+        "rewritten": rewritten,
+        "pending": total - rewritten,
+        "percentage": round((rewritten / total * 100) if total > 0 else 0, 1)
+    }
+
 @api_router.get("/obligations/{obligation_id}")
 async def get_obligation(obligation_id: str):
     obligation = await db.obligations.find_one({"id": obligation_id}, {"_id": 0})
