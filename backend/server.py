@@ -75,6 +75,14 @@ class Company(BaseModel):
     subscription_status: str = "active"
     mrr: float = 2500.0
 
+class PlainLanguageSummary(BaseModel):
+    """5-section plain language breakdown of compliance obligation"""
+    statute_jurisdiction: str = ""  # Section 1: Statute & Jurisdiction
+    core_obligations: str = ""       # Section 2: Core Obligations
+    practical_implications: str = "" # Section 3: Practical Implications
+    deadlines_triggers: str = ""     # Section 4: Key Deadlines & Triggers
+    non_compliance_risks: str = ""   # Section 5: Non-Compliance Risks
+
 class Obligation(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -94,6 +102,8 @@ class Obligation(BaseModel):
     sector: str
     sub_sector: str
     status: str = "pending"  # pending, in_progress, completed, non_compliant, overdue
+    # New 5-section plain language summary
+    plain_language_summary: Optional[Dict[str, str]] = None
 
 class ObligationCreate(BaseModel):
     category: str
