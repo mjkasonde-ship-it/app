@@ -1221,6 +1221,70 @@ Respond with ONLY the summary text, no additional formatting or explanation."""
         logger.error(f"Rewrite obligation error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to rewrite obligation: {str(e)}")
 
+@api_router.post("/obligations/{obligation_id}/legal-summary")
+async def generate_legal_summary(obligation_id: str):
+    """Generate Magic Circle style legal summary for a single obligation"""
+    obligation = await db.obligations.find_one({"id": obligation_id}, {"_id": 0})
+    if not obligation:
+        raise HTTPException(status_code=404, detail="Obligation not found")
+    
+    emergent_key = os.environ.get('EMERGENT_LLM_KEY')
+    if not emergent_key:
+        raise HTTPException(status_code=500, detail="LLM API key not configured")
+    
+    try:
+        chat = LlmChat(
+            api_key=emergent_key,
+            session_id=f"cove-legal-summary-{uuid.uuid4()}",
+            system_message="""You are a senior partner at a Magic Circle law firm (Clifford Chance, Allen & Overy, Linklaters, Freshfields, or Slaughter and May). 
+            Your writing style is characterised by:
+            - Precise, authoritative legal language
+            - Formal but accessible tone
+            - Structured, clear presentation
+            - Professional gravitas without unnecessary complexity
+            - Concise yet comprehensive analysis
+            You advise FTSE 100 and Fortune 500 companies on regulatory compliance matters across multiple jurisdictions."""
+        ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+        
+        prompt = f"""Provide a concise legal summary of this compliance obligation in the style of a Magic Circle law firm client briefing note.
+
+COMPLIANCE OBLIGATION:
+- Legislation: {obligation.get('statute', 'N/A')} ({obligation.get('provision', 'N/A')})
+- Requirement: {obligation.get('obligation', 'N/A')}
+- Action Required: {obligation.get('action_required', 'N/A')}
+- Penalty for Non-Compliance: {obligation.get('consequences', obligation.get('penalty', 'N/A'))}
+- Regulatory Authority: {obligation.get('responsible_authority', 'N/A')}
+- Filing Frequency: {obligation.get('frequency', 'N/A')}
+
+Write a 2-3 sentence summary that:
+1. States the statutory basis and core requirement with precision
+2. Highlights the key compliance action in practical terms
+3. Notes the regulatory consequence of non-compliance
+
+Use formal legal register. Do not use bullet points. Do not include headers. Write as a single flowing paragraph suitable for inclusion in a compliance matrix.
+
+Respond with ONLY the summary text, no additional formatting or explanation."""
+
+        user_message = UserMessage(text=prompt)
+        response = await chat.send_message(user_message)
+        legal_summary = response.strip()
+        
+        # Update the obligation in database
+        await db.obligations.update_one(
+            {"id": obligation_id},
+            {"$set": {"legal_summary": legal_summary}}
+        )
+        
+        return {
+            "message": "Legal summary generated successfully",
+            "obligation_id": obligation_id,
+            "legal_summary": legal_summary
+        }
+        
+    except Exception as e:
+        logger.error(f"Legal summary generation error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate legal summary: {str(e)}")
+
 @api_router.post("/obligations/rewrite-batch")
 async def rewrite_obligations_batch(request: RewriteAllRequest, background_tasks: BackgroundTasks):
     """Start batch rewriting of obligations - processes in background"""
