@@ -197,6 +197,8 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
     - Detail sheet displays 5-section color-coded cards when summary exists
     - "Generate" button for obligations without plain_language_summary
     - Real-time UI update after generation
+    - **"Rewrite All" button** in toolbar - batch processes up to 20 obligations at a time with progress updates
+    - **Section reference links** - Each row shows statute name + clickable section reference (e.g., "Section 45") linking to legislation
   - `plain_language_summary` field added to Obligation model (Dict with 5 keys)
 
 ## API Endpoints
