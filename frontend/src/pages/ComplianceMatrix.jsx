@@ -1033,17 +1033,17 @@ export default function ComplianceMatrix() {
                                       <p className="text-sm font-medium text-slate-900 line-clamp-1" title={obl.statute}>
                                         {obl.statute}
                                       </p>
-                                      {/* Section reference as clickable link - e.g. "Section 18 of the Mines and Minerals Development Act" */}
+                                      {/* Section reference as clickable link - links to relevant section */}
                                       <a
                                         href={obl.legal_reference_url}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 hover:underline mt-0.5 group/link"
                                         data-testid={`section-link-${idx}`}
-                                        title={`${obl.provision} of the ${obl.statute}`}
+                                        title={`View ${obl.provision} of the ${obl.statute}`}
                                       >
                                         <Scale className="w-3 h-3 flex-shrink-0" />
-                                        <span className="line-clamp-1">{obl.provision} of the {obl.statute}</span>
+                                        <span>{obl.provision}</span>
                                         <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover/link:opacity-100 transition-opacity flex-shrink-0" />
                                       </a>
                                       {/* Obligation description */}
