@@ -1021,25 +1021,26 @@ export default function ComplianceMatrix() {
                                 <TableCell className="py-3">
                                   <div className="flex items-start gap-2">
                                     {/* Severity indicator */}
-                                    <div className={`w-1 h-12 rounded-full flex-shrink-0 ${severityConfig.dot}`} />
+                                    <div className={`w-1 h-14 rounded-full flex-shrink-0 ${severityConfig.dot}`} />
                                     <div className="min-w-0 flex-1">
-                                      {/* Merged Legislation + Provision as clickable link */}
+                                      {/* Statute name */}
+                                      <p className="text-sm font-medium text-slate-900 truncate" title={obl.statute}>
+                                        {obl.statute}
+                                      </p>
+                                      {/* Section reference as clickable link */}
                                       <a
                                         href={obl.legal_reference_url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-900 hover:text-emerald-700 transition-colors group/link"
-                                        data-testid={`legislation-link-${idx}`}
+                                        className="inline-flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 hover:underline mt-0.5 group/link"
+                                        data-testid={`section-link-${idx}`}
                                       >
-                                        <span className="truncate max-w-[180px]" title={obl.statute}>
-                                          {obl.statute.split(' ').slice(0, 4).join(' ')}...
-                                        </span>
-                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 font-normal shrink-0">
-                                          {obl.provision}
-                                        </Badge>
-                                        <ExternalLink className="w-3 h-3 opacity-0 group-hover/link:opacity-100 transition-opacity flex-shrink-0" />
+                                        <Scale className="w-3 h-3" />
+                                        <span>{obl.provision} of the {obl.statute.split(' ').slice(0, -1).join(' ')}</span>
+                                        <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover/link:opacity-100 transition-opacity" />
                                       </a>
-                                      <p className="text-xs text-slate-500 mt-0.5 truncate" title={obl.obligation}>
+                                      {/* Obligation description */}
+                                      <p className="text-xs text-slate-500 mt-1 truncate" title={obl.obligation}>
                                         {obl.obligation}
                                       </p>
                                     </div>
