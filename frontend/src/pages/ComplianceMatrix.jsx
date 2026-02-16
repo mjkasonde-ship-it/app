@@ -1048,6 +1048,42 @@ export default function ComplianceMatrix() {
                                   </div>
                                 </TableCell>
                               )}
+                              {visibleColumns.legalSummary && (
+                                <TableCell className="py-3">
+                                  {obl.legal_summary ? (
+                                    <p className="text-sm text-slate-700 line-clamp-3 italic" title={obl.legal_summary}>
+                                      {obl.legal_summary}
+                                    </p>
+                                  ) : (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-7 text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50 gap-1"
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        try {
+                                          const response = await axios.post(`${API}/obligations/${obl.id}/legal-summary`);
+                                          if (response.data.legal_summary) {
+                                            setObligations(prev => prev.map(o => 
+                                              o.id === obl.id 
+                                                ? { ...o, legal_summary: response.data.legal_summary }
+                                                : o
+                                            ));
+                                            toast.success("Legal summary generated");
+                                          }
+                                        } catch (error) {
+                                          console.error("Error generating legal summary:", error);
+                                          toast.error("Failed to generate summary");
+                                        }
+                                      }}
+                                      data-testid={`generate-legal-summary-${idx}`}
+                                    >
+                                      <Wand2 className="w-3 h-3" />
+                                      Generate
+                                    </Button>
+                                  )}
+                                </TableCell>
+                              )}
                               {visibleColumns.action && (
                                 <TableCell className="py-3">
                                   <p className="text-sm text-slate-700 line-clamp-2" title={obl.action_required}>
