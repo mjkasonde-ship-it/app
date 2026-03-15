@@ -350,3 +350,122 @@ TIER_CONFIG = {
         "fee_percentage": 1.5
     }
 }
+
+
+# =========================
+# PULL ORDER MODELS (Direct Debit)
+# =========================
+
+class PullOrderStatus(str, Enum):
+    PENDING_APPROVAL = "pending_approval"  # Awaiting client approval
+    APPROVED = "approved"                   # Client approved, ready to execute
+    REJECTED = "rejected"                   # Client rejected
+    PROCESSING = "processing"               # Being executed
+    COMPLETED = "completed"                 # Successfully pulled
+    FAILED = "failed"                       # Pull failed
+    EXPIRED = "expired"                     # Approval window expired
+    CANCELLED = "cancelled"                 # Cancelled by requester
+
+
+class PullOrder(BaseModel):
+    """
+    Pull Order - Request to pull funds from client's linked bank account
+    Requires explicit client approval before execution
+    """
+    id: str = Field(default_factory=lambda: f"pull_{uuid.uuid4().hex[:12]}")
+    company_id: str
+    sub_account_id: str
+    
+    # Pull details
+    amount: float
+    currency: str = "ZMW"
+    reference: str = Field(default_factory=lambda: f"PULL-{datetime.utcnow().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}")
+    description: str
+    
+    # Source bank account
+    source_bank_account_id: str
+    source_bank_code: str
+    source_account_number_masked: str
+    source_account_name: str
+    
+    # Reason/Purpose
+    purpose: str  # regulatory_payment, subscription, invoice, other
+    purpose_reference: Optional[str] = None  # e.g., filing_id, invoice_id
+    
+    # Status
+    status: PullOrderStatus = PullOrderStatus.PENDING_APPROVAL
+    
+    # Approval details
+    approval_token: str = Field(default_factory=lambda: uuid.uuid4().hex)
+    approval_expires_at: datetime = Field(default_factory=lambda: datetime.utcnow() + timedelta(hours=48))
+    approved_at: Optional[datetime] = None
+    approved_by: Optional[str] = None
+    approval_ip: Optional[str] = None
+    rejection_reason: Optional[str] = None
+    rejected_at: Optional[datetime] = None
+    
+    # Execution details
+    executed_at: Optional[datetime] = None
+    provider: Optional[str] = None
+    provider_reference: Optional[str] = None
+    wallet_transaction_id: Optional[str] = None
+    
+    # Fee
+    fee: float = 0.0
+    net_amount: float = 0.0
+    
+    # Notifications
+    notification_sent: bool = False
+    notification_sent_at: Optional[datetime] = None
+    reminder_count: int = 0
+    
+    # Timestamps
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class PullOrderApprovalAudit(BaseModel):
+    """Audit trail for pull order approvals/rejections"""
+    id: str = Field(default_factory=lambda: f"paud_{uuid.uuid4().hex[:12]}")
+    pull_order_id: str
+    company_id: str
+    
+    action: str  # approve, reject, expire, cancel
+    
+    # Client info
+    client_name: Optional[str] = None
+    client_email: Optional[str] = None
+    ip_address: str
+    user_agent: str
+    
+    # Details
+    reason: Optional[str] = None
+    
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+
+class CreatePullOrderRequest(BaseModel):
+    """Request to create a pull order"""
+    amount: float
+    description: str
+    source_bank_account_id: str
+    purpose: str  # regulatory_payment, subscription, invoice, other
+    purpose_reference: Optional[str] = None
+
+
+class ApprovePullOrderRequest(BaseModel):
+    """Request to approve a pull order"""
+    approval_token: str
+    client_name: str
+    client_email: str
+
+
+class RejectPullOrderRequest(BaseModel):
+    """Request to reject a pull order"""
+    approval_token: str
+    reason: str
+    client_name: Optional[str] = None
+
+
+# Import timedelta for PullOrder default
+from datetime import timedelta

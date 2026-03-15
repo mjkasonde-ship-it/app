@@ -15,9 +15,12 @@ from .models import (
     FundRequest, PayoutRequest, TransferRequest, LinkBankRequest,
     LinkedBankAccount, LedgerEntry, WebhookConfig, WebhookEvent,
     TransactionType, TransactionStatus, SubscriptionTier, BankAccountStatus,
-    PaymentLinkResponse, TransactionResponse, TIER_CONFIG
+    PaymentLinkResponse, TransactionResponse, TIER_CONFIG,
+    PullOrder, PullOrderStatus, PullOrderApprovalAudit,
+    CreatePullOrderRequest, ApprovePullOrderRequest, RejectPullOrderRequest
 )
 from .adapters import PaymentAggregator
+from fastapi import Request
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +48,8 @@ bank_accounts_db = {}
 ledger_db = []
 webhooks_db = {}
 idempotency_cache = {}
+pull_orders_db = {}
+pull_order_audit_db = []
 
 
 def get_sub_account(company_id: str) -> Optional[SubAccount]:
@@ -569,4 +574,404 @@ async def get_subscription_info(company_id: str):
         "fee_percentage": tier_config["fee_percentage"],
         "api_access": tier_config["api_access"],
         "upgrade_available": sub_account.subscription_tier == SubscriptionTier.BASIC
+    }
+
+
+
+# =========================
+# PULL ORDER ENDPOINTS (Direct Debit)
+# =========================
+
+@wallet_router.post("/pull-orders/{company_id}/create")
+async def create_pull_order(
+    company_id: str,
+    request: CreatePullOrderRequest,
+    background_tasks: BackgroundTasks
+):
+    """
+    Create a pull order to debit funds from client's linked bank account.
+    The order requires client approval before execution.
+    """
+    sub_account = get_sub_account(company_id)
+    if not sub_account:
+        raise HTTPException(status_code=404, detail="Sub-account not found")
+    
+    # Get the source bank account
+    bank_account = bank_accounts_db.get(request.source_bank_account_id)
+    if not bank_account or bank_account.company_id != company_id:
+        raise HTTPException(status_code=404, detail="Bank account not found")
+    
+    if bank_account.status != BankAccountStatus.VERIFIED:
+        raise HTTPException(status_code=400, detail="Bank account must be verified for pull orders")
+    
+    # Calculate fee
+    tier_config = TIER_CONFIG[sub_account.subscription_tier]
+    fee = request.amount * (tier_config["fee_percentage"] / 100)
+    
+    # Create pull order
+    pull_order = PullOrder(
+        company_id=company_id,
+        sub_account_id=sub_account.id,
+        amount=request.amount,
+        description=request.description,
+        source_bank_account_id=request.source_bank_account_id,
+        source_bank_code=bank_account.bank_code,
+        source_account_number_masked=bank_account.account_number_masked,
+        source_account_name=bank_account.account_name,
+        purpose=request.purpose,
+        purpose_reference=request.purpose_reference,
+        fee=fee,
+        net_amount=request.amount - fee
+    )
+    
+    pull_orders_db[pull_order.id] = pull_order
+    
+    # In production: Send notification to client for approval
+    # background_tasks.add_task(send_pull_order_notification, pull_order)
+    
+    logger.info(f"Created pull order {pull_order.id} for {request.amount} ZMW from account {bank_account.account_number_masked}")
+    
+    return {
+        "message": "Pull order created. Awaiting client approval.",
+        "pull_order": pull_order.model_dump(),
+        "approval_link": f"/wallet/pull-orders/approve?token={pull_order.approval_token}",
+        "expires_at": pull_order.approval_expires_at.isoformat()
+    }
+
+
+@wallet_router.get("/pull-orders/{company_id}")
+async def get_pull_orders(
+    company_id: str,
+    status: Optional[PullOrderStatus] = None
+):
+    """Get all pull orders for a company"""
+    orders = [po for po in pull_orders_db.values() if po.company_id == company_id]
+    
+    if status:
+        orders = [po for po in orders if po.status == status]
+    
+    # Sort by created_at desc
+    orders.sort(key=lambda x: x.created_at, reverse=True)
+    
+    return {
+        "total": len(orders),
+        "pull_orders": [po.model_dump() for po in orders]
+    }
+
+
+@wallet_router.get("/pull-orders/detail/{pull_order_id}")
+async def get_pull_order_detail(pull_order_id: str):
+    """Get detailed pull order information"""
+    pull_order = pull_orders_db.get(pull_order_id)
+    if not pull_order:
+        raise HTTPException(status_code=404, detail="Pull order not found")
+    
+    # Get audit trail
+    audit_trail = [a for a in pull_order_audit_db if a.pull_order_id == pull_order_id]
+    audit_trail.sort(key=lambda x: x.timestamp, reverse=True)
+    
+    return {
+        "pull_order": pull_order.model_dump(),
+        "audit_trail": [a.model_dump() for a in audit_trail]
+    }
+
+
+@wallet_router.get("/pull-approval")
+async def get_pending_approval_by_token(token: str):
+    """
+    Get pull order details by approval token.
+    Used by client to view and approve/reject the pull order.
+    """
+    # Find pull order by token
+    pull_order = None
+    for po in pull_orders_db.values():
+        if po.approval_token == token:
+            pull_order = po
+            break
+    
+    if not pull_order:
+        raise HTTPException(status_code=404, detail="Pull order not found or invalid token")
+    
+    # Check if expired
+    if datetime.utcnow() > pull_order.approval_expires_at:
+        if pull_order.status == PullOrderStatus.PENDING_APPROVAL:
+            pull_order.status = PullOrderStatus.EXPIRED
+            pull_order.updated_at = datetime.utcnow()
+        raise HTTPException(status_code=400, detail="Approval link has expired")
+    
+    # Check status
+    if pull_order.status != PullOrderStatus.PENDING_APPROVAL:
+        return {
+            "pull_order": pull_order.model_dump(),
+            "can_approve": False,
+            "message": f"This pull order has already been {pull_order.status.value}"
+        }
+    
+    # Get sub-account for company name
+    sub_account = sub_accounts_db.get(pull_order.sub_account_id)
+    
+    return {
+        "pull_order": {
+            "id": pull_order.id,
+            "reference": pull_order.reference,
+            "amount": pull_order.amount,
+            "currency": pull_order.currency,
+            "fee": pull_order.fee,
+            "net_amount": pull_order.net_amount,
+            "description": pull_order.description,
+            "purpose": pull_order.purpose,
+            "source_account_masked": pull_order.source_account_number_masked,
+            "source_account_name": pull_order.source_account_name,
+            "requester_company": sub_account.company_name if sub_account else "Unknown",
+            "created_at": pull_order.created_at.isoformat(),
+            "expires_at": pull_order.approval_expires_at.isoformat()
+        },
+        "can_approve": True,
+        "message": "Please review and approve or reject this debit request"
+    }
+
+
+@wallet_router.post("/pull-orders/approve")
+async def approve_pull_order(request: ApprovePullOrderRequest, req: Request):
+    """
+    Client approves the pull order.
+    After approval, the funds will be pulled from the linked bank account.
+    """
+    # Find pull order by token
+    pull_order = None
+    for po in pull_orders_db.values():
+        if po.approval_token == request.approval_token:
+            pull_order = po
+            break
+    
+    if not pull_order:
+        raise HTTPException(status_code=404, detail="Pull order not found or invalid token")
+    
+    # Check if expired
+    if datetime.utcnow() > pull_order.approval_expires_at:
+        pull_order.status = PullOrderStatus.EXPIRED
+        pull_order.updated_at = datetime.utcnow()
+        raise HTTPException(status_code=400, detail="Approval link has expired")
+    
+    # Check status
+    if pull_order.status != PullOrderStatus.PENDING_APPROVAL:
+        raise HTTPException(status_code=400, detail=f"Pull order is {pull_order.status.value}, cannot approve")
+    
+    # Get client info
+    client_ip = req.client.host if req.client else "unknown"
+    user_agent = req.headers.get("user-agent", "unknown")
+    
+    # Create audit record
+    audit = PullOrderApprovalAudit(
+        pull_order_id=pull_order.id,
+        company_id=pull_order.company_id,
+        action="approve",
+        client_name=request.client_name,
+        client_email=request.client_email,
+        ip_address=client_ip,
+        user_agent=user_agent
+    )
+    pull_order_audit_db.append(audit)
+    
+    # Update pull order
+    pull_order.status = PullOrderStatus.APPROVED
+    pull_order.approved_at = datetime.utcnow()
+    pull_order.approved_by = request.client_name
+    pull_order.approval_ip = client_ip
+    pull_order.updated_at = datetime.utcnow()
+    
+    logger.info(f"Pull order {pull_order.id} approved by {request.client_name} from {client_ip}")
+    
+    return {
+        "message": "Pull order approved successfully",
+        "pull_order_id": pull_order.id,
+        "reference": pull_order.reference,
+        "amount": pull_order.amount,
+        "status": pull_order.status.value,
+        "approved_at": pull_order.approved_at.isoformat(),
+        "next_step": "The funds will be pulled from your account within 1-2 business days"
+    }
+
+
+@wallet_router.post("/pull-orders/reject")
+async def reject_pull_order(request: RejectPullOrderRequest, req: Request):
+    """
+    Client rejects the pull order.
+    """
+    # Find pull order by token
+    pull_order = None
+    for po in pull_orders_db.values():
+        if po.approval_token == request.approval_token:
+            pull_order = po
+            break
+    
+    if not pull_order:
+        raise HTTPException(status_code=404, detail="Pull order not found or invalid token")
+    
+    # Check status
+    if pull_order.status != PullOrderStatus.PENDING_APPROVAL:
+        raise HTTPException(status_code=400, detail=f"Pull order is {pull_order.status.value}, cannot reject")
+    
+    # Get client info
+    client_ip = req.client.host if req.client else "unknown"
+    user_agent = req.headers.get("user-agent", "unknown")
+    
+    # Create audit record
+    audit = PullOrderApprovalAudit(
+        pull_order_id=pull_order.id,
+        company_id=pull_order.company_id,
+        action="reject",
+        client_name=request.client_name,
+        client_email=None,
+        ip_address=client_ip,
+        user_agent=user_agent,
+        reason=request.reason
+    )
+    pull_order_audit_db.append(audit)
+    
+    # Update pull order
+    pull_order.status = PullOrderStatus.REJECTED
+    pull_order.rejected_at = datetime.utcnow()
+    pull_order.rejection_reason = request.reason
+    pull_order.updated_at = datetime.utcnow()
+    
+    logger.info(f"Pull order {pull_order.id} rejected: {request.reason}")
+    
+    return {
+        "message": "Pull order rejected",
+        "pull_order_id": pull_order.id,
+        "status": pull_order.status.value,
+        "reason": request.reason
+    }
+
+
+@wallet_router.post("/pull-orders/{pull_order_id}/execute")
+async def execute_pull_order(pull_order_id: str):
+    """
+    Execute an approved pull order.
+    Pulls funds from client's bank account and credits to wallet.
+    """
+    pull_order = pull_orders_db.get(pull_order_id)
+    if not pull_order:
+        raise HTTPException(status_code=404, detail="Pull order not found")
+    
+    if pull_order.status != PullOrderStatus.APPROVED:
+        raise HTTPException(status_code=400, detail=f"Pull order must be approved. Current status: {pull_order.status.value}")
+    
+    sub_account = sub_accounts_db.get(pull_order.sub_account_id)
+    if not sub_account:
+        raise HTTPException(status_code=404, detail="Sub-account not found")
+    
+    # Update status to processing
+    pull_order.status = PullOrderStatus.PROCESSING
+    pull_order.updated_at = datetime.utcnow()
+    
+    # Call payment aggregator for direct debit
+    aggregator = get_payment_aggregator()
+    
+    # Note: In production, this would use the aggregator's direct debit API
+    # For demo, we simulate the pull
+    try:
+        # Simulate direct debit call
+        # result = await aggregator.initiate_direct_debit(...)
+        
+        # For demo: Simulate successful pull
+        pull_order.status = PullOrderStatus.COMPLETED
+        pull_order.executed_at = datetime.utcnow()
+        pull_order.provider = "cgrate"  # Would come from actual response
+        pull_order.provider_reference = f"DD-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+        
+        # Create wallet transaction
+        txn = WalletTransaction(
+            sub_account_id=sub_account.id,
+            company_id=pull_order.company_id,
+            type=TransactionType.FUND,
+            amount=pull_order.amount,
+            currency=pull_order.currency,
+            fee=pull_order.fee,
+            net_amount=pull_order.net_amount,
+            description=f"Pull from {pull_order.source_account_number_masked}: {pull_order.description}",
+            status=TransactionStatus.COMPLETED,
+            provider=pull_order.provider,
+            provider_reference=pull_order.provider_reference,
+            balance_before=sub_account.available_balance,
+            completed_at=datetime.utcnow()
+        )
+        
+        # Credit to wallet
+        sub_account.available_balance += pull_order.net_amount
+        sub_account.last_activity = datetime.utcnow()
+        sub_account.updated_at = datetime.utcnow()
+        
+        txn.balance_after = sub_account.available_balance
+        transactions_db[txn.id] = txn
+        
+        pull_order.wallet_transaction_id = txn.id
+        pull_order.updated_at = datetime.utcnow()
+        
+        # Create ledger entry
+        create_ledger_entry(txn, "credit", "available", pull_order.net_amount, sub_account.available_balance)
+        
+        logger.info(f"Pull order {pull_order_id} executed. Credited {pull_order.net_amount} ZMW to wallet")
+        
+        return {
+            "message": "Pull order executed successfully",
+            "pull_order_id": pull_order.id,
+            "amount_pulled": pull_order.amount,
+            "fee": pull_order.fee,
+            "net_credited": pull_order.net_amount,
+            "new_balance": sub_account.available_balance,
+            "transaction_id": txn.id
+        }
+        
+    except Exception as e:
+        pull_order.status = PullOrderStatus.FAILED
+        pull_order.updated_at = datetime.utcnow()
+        logger.error(f"Pull order {pull_order_id} failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to execute pull: {str(e)}")
+
+
+@wallet_router.post("/pull-orders/{pull_order_id}/cancel")
+async def cancel_pull_order(pull_order_id: str, req: Request):
+    """Cancel a pending pull order"""
+    pull_order = pull_orders_db.get(pull_order_id)
+    if not pull_order:
+        raise HTTPException(status_code=404, detail="Pull order not found")
+    
+    if pull_order.status not in [PullOrderStatus.PENDING_APPROVAL, PullOrderStatus.APPROVED]:
+        raise HTTPException(status_code=400, detail=f"Cannot cancel pull order in status: {pull_order.status.value}")
+    
+    client_ip = req.client.host if req.client else "unknown"
+    user_agent = req.headers.get("user-agent", "unknown")
+    
+    # Create audit record
+    audit = PullOrderApprovalAudit(
+        pull_order_id=pull_order.id,
+        company_id=pull_order.company_id,
+        action="cancel",
+        ip_address=client_ip,
+        user_agent=user_agent,
+        reason="Cancelled by requester"
+    )
+    pull_order_audit_db.append(audit)
+    
+    pull_order.status = PullOrderStatus.CANCELLED
+    pull_order.updated_at = datetime.utcnow()
+    
+    return {
+        "message": "Pull order cancelled",
+        "pull_order_id": pull_order.id,
+        "status": pull_order.status.value
+    }
+
+
+@wallet_router.get("/pull-orders/{company_id}/audit")
+async def get_pull_order_audit_trail(company_id: str):
+    """Get audit trail for all pull orders of a company"""
+    audits = [a for a in pull_order_audit_db if a.company_id == company_id]
+    audits.sort(key=lambda x: x.timestamp, reverse=True)
+    
+    return {
+        "total": len(audits),
+        "audit_records": [a.model_dump() for a in audits]
     }
