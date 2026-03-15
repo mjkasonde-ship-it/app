@@ -205,6 +205,40 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
   - `plain_language_summary` field added to Obligation model (Dict with 5 keys)
   - `legal_summary` field added for Magic Circle style summaries (string)
 
+### Phase 9 (CoveSmartWallet) - Mar 2026
+- [x] **Programmable Payment Wallet Module:**
+  - Multi-tenant master wallet with sub-accounts per company
+  - **Payment Aggregators (with failover):**
+    - Primary: cGrate (Zambia-licensed, Bank of Zambia designated)
+    - Fallback 1: DPO Pay (Pan-African)
+    - Fallback 2: Flutterwave (Global)
+  - **2-Tier Subscription Model:**
+    - Basic: View balance, receive payments, transaction history (2.5% fee)
+    - Premium: Full wallet - payouts, scheduled payments, API access, webhooks (1.5% fee)
+  - **Backend Module (`/app/backend/wallet/`):**
+    - `adapters.py` - Payment provider adapters with automatic failover
+    - `models.py` - SubAccount, WalletTransaction, LinkedBankAccount, LedgerEntry
+    - `routes.py` - Wallet API endpoints
+  - **API Endpoints:**
+    - `POST /api/wallet/sub-accounts` - Create sub-account
+    - `GET /api/wallet/balance/{company_id}` - Get balance
+    - `POST /api/wallet/fund/{company_id}` - Initiate funding
+    - `POST /api/wallet/payout/{company_id}` - Execute payout (Premium only)
+    - `POST /api/wallet/bank-accounts/{company_id}/link` - Link bank account
+    - `GET /api/wallet/transactions/{company_id}` - Transaction history
+    - `GET /api/wallet/subscription/{company_id}` - Subscription info
+  - **Frontend (`/app/frontend/src/pages/Wallet/`):**
+    - Balance cards (Available, Pending, Reserved in ZMW)
+    - Quick actions: Fund Wallet, Send Payout, Link Bank, Refresh
+    - Tabs: Transactions, Bank Accounts, Settings
+    - Subscription management with upgrade CTA
+    - Payout limits with progress visualization
+  - **Security & Compliance:**
+    - PCI-DSS compliant (tokenized bank details)
+    - KYC/AML verification required for payouts
+    - Idempotency keys for duplicate prevention
+    - Double-entry ledger for audit trail
+
 ## API Endpoints
 
 ### Core APIs

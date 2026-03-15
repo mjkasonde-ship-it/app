@@ -11,6 +11,9 @@ import uuid
 from datetime import datetime, timezone, timedelta
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 
+# Import wallet module
+from wallet import wallet_router
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -2164,7 +2167,11 @@ async def get_notifications(company_id: Optional[str] = None):
     return notifications
 
 # Include the router in the main app
+# Include main API router
 app.include_router(api_router)
+
+# Include wallet router under /api prefix
+app.include_router(wallet_router, prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,
