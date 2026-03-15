@@ -239,6 +239,42 @@ Build a Zambia legal tech SaaS platform - governance/compliance tool for Lusaka 
     - Idempotency keys for duplicate prevention
     - Double-entry ledger for audit trail
 
+### Phase 10 (CoveRegFiling) - Mar 2026
+- [x] **Automated Regulatory Filing Module:**
+  - Monthly reminders for due filings (client & host firm)
+  - Form preparation workflow with approval
+  - Fee calculation with late penalties
+  - Payment Order generation with authorization
+  - Wallet integration for payment execution
+  - Smart payment prioritization when funds low (by penalty/criticality)
+  - **Backend Module (`/app/backend/regfiling/`):**
+    - `models.py` - RegFiling, PaymentOrder, AuthorizationAudit, REGULATORY_FEES
+    - `routes.py` - Filing management, PO generation, authorization, payment
+  - **API Endpoints:**
+    - `GET /api/regfiling/filings/{company_id}/upcoming` - Get upcoming filings
+    - `POST /api/regfiling/reminders/send` - Send filing reminders
+    - `POST /api/regfiling/forms/prepare` - Prepare filing form
+    - `POST /api/regfiling/forms/approve` - Approve prepared form
+    - `POST /api/regfiling/fees/calculate` - Calculate fees with penalties
+    - `POST /api/regfiling/po/generate` - Generate Payment Order
+    - `POST /api/regfiling/po/authorize` - Authorize PO (timestamped audit)
+    - `POST /api/regfiling/po/pay` - Execute payment via wallet
+    - `POST /api/regfiling/payments/prioritize/{company_id}` - Smart payment ordering
+    - `GET /api/regfiling/audit/{company_id}` - Authorization audit trail
+  - **Frontend (`/app/frontend/src/pages/RegFiling/`):**
+    - Summary cards: Overdue, Due Soon, Upcoming, Payment Orders
+    - Low funds alert with prioritization recommendation
+    - Filings table with Gen PO actions
+    - Payment Orders tab with Authorize/Pay buttons
+    - Audit Trail tab with timestamped auth records
+  - **Regulatory Fee Database:**
+    - PACRA, ZRA, NAPSA, WCFCB, ZEMA, Ministry of Mines
+    - Base fees, late penalty rates, max penalties
+  - **Smart Features:**
+    - Priority scoring by penalty amount + urgency
+    - Automatic reordering when wallet balance low
+    - Deferred payments recommendation
+
 ## API Endpoints
 
 ### Core APIs

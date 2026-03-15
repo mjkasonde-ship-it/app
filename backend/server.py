@@ -13,6 +13,7 @@ from emergentintegrations.llm.chat import LlmChat, UserMessage
 
 # Import wallet module
 from wallet import wallet_router
+from regfiling import regfiling_router
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -2172,6 +2173,9 @@ app.include_router(api_router)
 
 # Include wallet router under /api prefix
 app.include_router(wallet_router, prefix="/api")
+
+# Include regulatory filing router under /api prefix
+app.include_router(regfiling_router, prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,

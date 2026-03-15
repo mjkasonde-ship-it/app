@@ -17,6 +17,7 @@ import Calendar from "./pages/Calendar";
 import ReportBuilder from "./pages/ReportBuilder";
 import FormsRepository from "./pages/FormsRepository";
 import Wallet from "./pages/Wallet/Wallet";
+import RegFiling from "./pages/RegFiling/RegFiling";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
@@ -527,6 +528,8 @@ function App() {
           <Route path="/forms/:companyId" element={<FormsRepository />} />
           <Route path="/wallet" element={<Wallet />} />
           <Route path="/wallet/:companyId" element={<Wallet />} />
+          <Route path="/regfiling" element={<RegFiling />} />
+          <Route path="/regfiling/:companyId" element={<RegFiling />} />
           <Route path="/admin" element={<AdminConsole />} />
         </Routes>
       </BrowserRouter>

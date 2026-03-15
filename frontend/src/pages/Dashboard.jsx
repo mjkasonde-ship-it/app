@@ -28,7 +28,8 @@ import {
   Users,
   FileBarChart,
   FileStack,
-  Wallet
+  Wallet,
+  Stamp
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
 import { Progress } from "../components/ui/progress";
@@ -461,6 +462,15 @@ export default function Dashboard() {
                 <Wallet className="w-4 h-4" />
                 Wallet
               </Button>
+              <Button
+                variant="ghost"
+                className={`gap-1.5 text-sm hover:bg-[#FFF1E5]`}
+                onClick={() => navigate(`/regfiling/${companyId || ''}`)}
+                data-testid="nav-regfiling"
+              >
+                <Stamp className="w-4 h-4" />
+                Filing
+              </Button>
             </nav>
 
             <div className="flex items-center gap-2">
@@ -550,6 +560,14 @@ export default function Dashboard() {
             >
               <Wallet className="w-4 h-4" />
               Wallet
+            </Button>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start gap-2 hover:bg-white/50"
+              onClick={() => { setMobileMenuOpen(false); navigate(`/regfiling/${companyId || ''}`); }}
+            >
+              <Stamp className="w-4 h-4" />
+              Filing
             </Button>
             <Button variant="ghost" className="w-full justify-start gap-2 hover:bg-white/50" onClick={() => { setMobileMenuOpen(false); navigate(`/settings/${companyId || ''}`); }}>
               <Settings className="w-4 h-4" />
