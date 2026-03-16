@@ -25,6 +25,7 @@ Build a full-featured corporate compliance management platform named "Cove" for 
 - Adapter-based payment gateway integration (cGrate, DPO, Flutterwave)
 - Fund, Payout, Transaction History, Bank Account Linking
 - **Pull Orders (Direct Debit)**: Request funds from client bank accounts with approval workflow
+- **Real-time WebSocket Notifications**: Live updates for pull order events (created, approved, rejected, executed, cancelled)
 
 ### 5. CoveRegFiling
 - Automated regulatory filing lifecycle management
@@ -52,6 +53,7 @@ Build a full-featured corporate compliance management platform named "Cove" for 
 - [x] CoveRegFiling - Automated filing module
 - [x] **Pull Order Frontend UI** - Create, Approve, Reject, Execute, Cancel pull orders
 - [x] **API prefix fix** - All wallet API calls now correctly use /api/wallet/ prefix
+- [x] **WebSocket Real-time Notifications** - Live push events for all pull order actions with auto-refresh and toast notifications
 
 ## Prioritized Backlog
 

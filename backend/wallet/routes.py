@@ -6,6 +6,7 @@ Wallet management, funding, payouts, and transactions
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Query
 from typing import Optional, List
 from datetime import datetime, timedelta
+import asyncio
 import hashlib
 import os
 import logging
@@ -21,6 +22,7 @@ from .models import (
 )
 from .adapters import PaymentAggregator
 from fastapi import Request
+from ws import manager as ws_manager
 
 logger = logging.getLogger(__name__)
 
@@ -631,6 +633,15 @@ async def create_pull_order(
     
     logger.info(f"Created pull order {pull_order.id} for {request.amount} ZMW from account {bank_account.account_number_masked}")
     
+    # Broadcast real-time event
+    background_tasks.add_task(
+        ws_manager.broadcast, company_id, "pull_order.created",
+        {"id": pull_order.id, "reference": pull_order.reference,
+         "amount": pull_order.amount, "status": pull_order.status.value,
+         "source_account": bank_account.account_number_masked,
+         "description": pull_order.description}
+    )
+    
     return {
         "message": "Pull order created. Awaiting client approval.",
         "pull_order": pull_order.model_dump(),
@@ -782,6 +793,14 @@ async def approve_pull_order(request: ApprovePullOrderRequest, req: Request):
     
     logger.info(f"Pull order {pull_order.id} approved by {request.client_name} from {client_ip}")
     
+    # Broadcast real-time event
+    asyncio.ensure_future(
+        ws_manager.broadcast(pull_order.company_id, "pull_order.approved",
+            {"id": pull_order.id, "reference": pull_order.reference,
+             "amount": pull_order.amount, "status": pull_order.status.value,
+             "approved_by": request.client_name})
+    )
+    
     return {
         "message": "Pull order approved successfully",
         "pull_order_id": pull_order.id,
@@ -836,6 +855,14 @@ async def reject_pull_order(request: RejectPullOrderRequest, req: Request):
     pull_order.updated_at = datetime.utcnow()
     
     logger.info(f"Pull order {pull_order.id} rejected: {request.reason}")
+    
+    # Broadcast real-time event
+    asyncio.ensure_future(
+        ws_manager.broadcast(pull_order.company_id, "pull_order.rejected",
+            {"id": pull_order.id, "reference": pull_order.reference,
+             "amount": pull_order.amount, "status": pull_order.status.value,
+             "reason": request.reason})
+    )
     
     return {
         "message": "Pull order rejected",
@@ -914,6 +941,15 @@ async def execute_pull_order(pull_order_id: str):
         
         logger.info(f"Pull order {pull_order_id} executed. Credited {pull_order.net_amount} ZMW to wallet")
         
+        # Broadcast real-time event
+        asyncio.ensure_future(
+            ws_manager.broadcast(pull_order.company_id, "pull_order.executed",
+                {"id": pull_order.id, "reference": pull_order.reference,
+                 "amount": pull_order.amount, "net_credited": pull_order.net_amount,
+                 "new_balance": sub_account.available_balance,
+                 "status": pull_order.status.value})
+        )
+        
         return {
             "message": "Pull order executed successfully",
             "pull_order_id": pull_order.id,
@@ -957,6 +993,13 @@ async def cancel_pull_order(pull_order_id: str, req: Request):
     
     pull_order.status = PullOrderStatus.CANCELLED
     pull_order.updated_at = datetime.utcnow()
+    
+    # Broadcast real-time event
+    asyncio.ensure_future(
+        ws_manager.broadcast(pull_order.company_id, "pull_order.cancelled",
+            {"id": pull_order.id, "reference": pull_order.reference,
+             "status": pull_order.status.value})
+    )
     
     return {
         "message": "Pull order cancelled",

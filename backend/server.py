@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, Query
+from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, Query, WebSocket, WebSocketDisconnect
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -14,6 +14,7 @@ from emergentintegrations.llm.chat import LlmChat, UserMessage
 # Import wallet module
 from wallet import wallet_router
 from regfiling import regfiling_router
+from ws import manager as ws_manager
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -2166,6 +2167,21 @@ async def get_notifications(company_id: Optional[str] = None):
         query["company_id"] = company_id
     notifications = await db.notifications.find(query, {"_id": 0}).to_list(1000)
     return notifications
+
+# =========================
+# WEBSOCKET ENDPOINT
+# =========================
+
+@app.websocket("/api/ws/notifications/{company_id}")
+async def websocket_notifications(websocket: WebSocket, company_id: str):
+    """Real-time notification channel per company."""
+    await ws_manager.connect(websocket, company_id)
+    try:
+        while True:
+            # Keep connection alive; client can send pings
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket, company_id)
 
 # Include the router in the main app
 # Include main API router

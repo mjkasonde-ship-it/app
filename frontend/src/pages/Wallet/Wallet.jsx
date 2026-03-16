@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useWalletNotifications } from "../../hooks/useWalletNotifications";
 import {
   ArrowLeft,
   Wallet,
@@ -85,6 +86,14 @@ const PULL_PURPOSE_OPTIONS = [
   { value: "other", label: "Other" },
 ];
 
+const WS_EVENT_LABELS = {
+  "pull_order.created": "Pull order created",
+  "pull_order.approved": "Pull order approved",
+  "pull_order.rejected": "Pull order rejected",
+  "pull_order.executed": "Pull order executed",
+  "pull_order.cancelled": "Pull order cancelled",
+};
+
 export default function WalletPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -136,6 +145,27 @@ export default function WalletPage() {
   const [processing, setProcessing] = useState(false);
 
   const companyId = "test-company-001";
+
+  // Real-time WebSocket notifications
+  const handleWsEvent = useCallback((msg) => {
+    const label = WS_EVENT_LABELS[msg.type] || msg.type;
+    const ref = msg.data?.reference || "";
+
+    if (msg.type === "pull_order.executed") {
+      toast.success(`${label}: ${ref}`, {
+        description: `Balance updated — ${new Intl.NumberFormat('en-ZM', { style: 'currency', currency: 'ZMW' }).format(msg.data?.new_balance || 0)}`,
+      });
+    } else if (msg.type === "pull_order.rejected") {
+      toast.error(`${label}: ${ref}`, { description: msg.data?.reason });
+    } else {
+      toast.info(`${label}: ${ref}`);
+    }
+
+    // Refresh wallet data on any event
+    fetchWalletData();
+  }, []);
+
+  useWalletNotifications(companyId, handleWsEvent);
 
   useEffect(() => {
     fetchWalletData();
@@ -518,7 +548,14 @@ export default function WalletPage() {
                 <h1 className="text-lg font-semibold text-[#2F1810]">Smart Wallet</h1>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5" data-testid="live-indicator">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span className="text-xs text-emerald-600 font-medium">Live</span>
+              </div>
               {subscription?.current_tier === "premium" ? (
                 <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white gap-1">
                   <Crown className="w-3 h-3" />
