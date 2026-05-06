@@ -1,0 +1,235 @@
+name: CD – Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false   # never cancel an in-flight deploy
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ── 1. Run the full test suite before any deployment ──────────────────────
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports: ['27017:27017']
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand("ping")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r backend/requirements.txt
+
+      - name: Pytest
+        env:
+          MONGO_URL: mongodb://localhost:27017
+          JWT_SECRET_KEY: test-secret-not-for-production
+          ENVIRONMENT: test
+        run: pytest tests/ -v --tb=short
+
+  # ── 2. Build & push Docker images ─────────────────────────────────────────
+  build:
+    name: Build images
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      backend_digest: ${{ steps.build_backend.outputs.digest }}
+      frontend_digest: ${{ steps.build_frontend.outputs.digest }}
+      version: ${{ steps.version.outputs.sha }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set version
+        id: version
+        run: echo "sha=${GITHUB_SHA::8}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker meta – backend
+        id: meta_backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend
+          tags: |
+            type=sha,prefix=,suffix=,format=short
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build & push backend
+        id: build_backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta_backend.outputs.tags }}
+          labels: ${{ steps.meta_backend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Docker meta – frontend
+        id: meta_frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend
+          tags: |
+            type=sha,prefix=,suffix=,format=short
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build & push frontend
+        id: build_frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ steps.meta_frontend.outputs.tags }}
+          labels: ${{ steps.meta_frontend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── 3. Deploy to Staging ───────────────────────────────────────────────────
+  deploy-staging:
+    name: Deploy – Staging
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.cove.zm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to staging via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd /opt/cove-staging
+            echo "BACKEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ needs.build.outputs.version }}" > .env.deploy
+            echo "FRONTEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ needs.build.outputs.version }}" >> .env.deploy
+            docker compose --env-file .env.deploy pull
+            docker compose --env-file .env.deploy up -d --remove-orphans
+            docker image prune -f
+
+      - name: Health-check staging
+        run: |
+          sleep 15
+          curl --fail --max-time 10 https://staging.cove.zm/health || exit 1
+
+  # ── 4. Smoke tests against Staging ────────────────────────────────────────
+  smoke-staging:
+    name: Smoke tests – Staging
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install test deps
+        run: pip install httpx pytest
+
+      - name: Run smoke tests
+        env:
+          API_BASE_URL: https://staging.cove.zm
+          SMOKE_USER: ${{ secrets.SMOKE_USER }}
+          SMOKE_PASS: ${{ secrets.SMOKE_PASS }}
+        run: pytest tests/smoke/ -v --tb=short -m smoke
+
+  # ── 5. Deploy to Production (manual gate) ─────────────────────────────────
+  deploy-production:
+    name: Deploy – Production
+    needs: [build, smoke-staging]
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://app.cove.zm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to production via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd /opt/cove
+            echo "BACKEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ needs.build.outputs.version }}" > .env.deploy
+            echo "FRONTEND_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ needs.build.outputs.version }}" >> .env.deploy
+            docker compose --env-file .env.deploy pull
+            docker compose --env-file .env.deploy up -d --remove-orphans
+            docker image prune -f
+
+      - name: Health-check production
+        run: |
+          sleep 15
+          curl --fail --max-time 10 https://app.cove.zm/health || exit 1
+
+  # ── 6. Notify on failure ───────────────────────────────────────────────────
+  notify-failure:
+    name: Notify on failure
+    needs: [test, build, deploy-staging, smoke-staging, deploy-production]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send failure notification
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-message: |
+            :red_circle: *CD Pipeline Failed*
+            *Repo:* ${{ github.repository }}
+            *Branch:* ${{ github.ref_name }}
+            *Commit:* ${{ github.sha }}
+            *Actor:* ${{ github.actor }}
+            *Run:* ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
