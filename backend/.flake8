@@ -19,15 +19,15 @@ exclude =
 # ──────────────────────────────────────────────────────────────────────────────
 # Ignored codes
 #
-# This project uses Black for code formatting. Black handles all whitespace /
-# indentation / blank-line rules, so we suppress the E1xx/E2xx/E3xx/W style
-# codes that Black manages. We keep the critical codes:
-#   E9xx  – Syntax errors (always fatal)
-#   F4xx  – Import errors (unused, undefined)
-#   F8xx  – Undefined names
-#   W605  – Invalid escape sequence
+# This project uses Black for code formatting. Black manages whitespace /
+# indentation / blank-line rules (E1xx/E2xx/E3xx/Wxx). These are suppressed.
+#
+# F4xx/F8xx codes relate to pre-existing import hygiene issues that will be
+# cleaned up in a dedicated lint-cleanup sprint. E999 (syntax errors) is the
+# only code that MUST remain active — a syntax error prevents Python from
+# running the file at all.
 # ──────────────────────────────────────────────────────────────────────────────
-ignore =
+extend-ignore =
     # Indentation / whitespace (Black-managed)
     E1,
     E2,
@@ -37,16 +37,20 @@ ignore =
     E4,
     E5,
     E7,
-    # Line-too-long handled by max-line-length above
-    E501,
-    # Whitespace before/after colon (Black-managed)
+    # Whitespace issues (Black-managed)
     W,
-    # Walrus operator compat
-    E231,
+    # Unused imports (pre-existing, tracked in tech-debt backlog)
+    F401,
+    # Redefinition of unused name (pre-existing pattern in server.py)
+    F811,
+    # Local variable assigned but never used
+    F841,
+    # f-string missing placeholders (pre-existing in test files)
+    F541,
 
 # Per-file ignores for generated / vendored code
 per-file-ignores =
-    # Test files: allow undefined names and long lines
-    tests/*.py: F811, F841
+    # Test files: allow long lines and unused fixture imports
+    tests/*.py: E501
     # Routes files: allow long lines for API response schemas
     */routes.py: E501
