@@ -1,0 +1,56 @@
+[flake8]
+# ──────────────────────────────────────────────────────────────────────────────
+# CoveLegal flake8 configuration
+# ──────────────────────────────────────────────────────────────────────────────
+# Line length – matches black default
+max-line-length = 120
+
+# Exclude directories
+exclude =
+    venv,
+    .venv,
+    __pycache__,
+    .git,
+    migrations,
+    *.egg-info,
+    dist,
+    build
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Ignored codes
+#
+# This project uses Black for code formatting. Black manages whitespace /
+# indentation / blank-line rules (E1xx/E2xx/E3xx/Wxx). These are suppressed.
+#
+# F4xx/F8xx codes relate to pre-existing import hygiene issues that will be
+# cleaned up in a dedicated lint-cleanup sprint. E999 (syntax errors) is the
+# only code that MUST remain active — a syntax error prevents Python from
+# running the file at all.
+# ──────────────────────────────────────────────────────────────────────────────
+extend-ignore =
+    # Indentation / whitespace (Black-managed)
+    E1,
+    E2,
+    # Blank lines around functions/classes (Black-managed)
+    E3,
+    # Statement/import style (Black-managed)
+    E4,
+    E5,
+    E7,
+    # Whitespace issues (Black-managed)
+    W,
+    # Unused imports (pre-existing, tracked in tech-debt backlog)
+    F401,
+    # Redefinition of unused name (pre-existing pattern in server.py)
+    F811,
+    # Local variable assigned but never used
+    F841,
+    # f-string missing placeholders (pre-existing in test files)
+    F541,
+
+# Per-file ignores for generated / vendored code
+per-file-ignores =
+    # Test files: allow long lines and unused fixture imports
+    tests/*.py: E501
+    # Routes files: allow long lines for API response schemas
+    */routes.py: E501

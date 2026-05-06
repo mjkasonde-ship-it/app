@@ -2,6 +2,7 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
     "@phosphor-icons/react": "^2.1.10",
@@ -65,7 +66,8 @@
   "scripts": {
     "start": "craco start",
     "build": "craco build",
-    "test": "craco test"
+    "test": "craco test",
+    "lint": "eslint src/ --max-warnings=50"
   },
   "browserslist": {
     "production": [

@@ -231,6 +231,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send failure notification
+        continue-on-error: true
         uses: slackapi/slack-github-action@v1.26.0
         with:
           channel-id: ${{ secrets.SLACK_CHANNEL_ID }}

@@ -20,7 +20,7 @@ from .models import (
     PullOrderApprovalAudit,
     CreatePullOrderRequest,
     ApprovePullOrderRequest,
-    RejectPullOrderRequest
+    RejectPullOrderRequest,
 )
 
 from .adapters import (
@@ -28,15 +28,22 @@ from .adapters import (
     CGrateAdapter,
     DPOAdapter,
     FlutterwaveAdapter,
-    PaymentProvider
+    PaymentProvider,
 )
 
-from .routes import wallet_router
+# New layered architecture: router → service → repository
+from .router import wallet_router
+from .repository import WalletRepositories, ensure_wallet_indexes
 
 __all__ = [
+    # Router (mount in server.py)
     "wallet_router",
+    # Repository bootstrap
+    "WalletRepositories",
+    "ensure_wallet_indexes",
+    # Domain models
     "SubAccount",
-    "SubAccountCreate", 
+    "SubAccountCreate",
     "WalletTransaction",
     "WalletBalance",
     "FundRequest",
@@ -46,15 +53,16 @@ __all__ = [
     "TransactionType",
     "TransactionStatus",
     "TIER_CONFIG",
-    "PaymentAggregator",
-    "CGrateAdapter",
-    "DPOAdapter",
-    "FlutterwaveAdapter",
-    "PaymentProvider",
     "PullOrder",
     "PullOrderStatus",
     "PullOrderApprovalAudit",
     "CreatePullOrderRequest",
     "ApprovePullOrderRequest",
-    "RejectPullOrderRequest"
+    "RejectPullOrderRequest",
+    # Adapters
+    "PaymentAggregator",
+    "CGrateAdapter",
+    "DPOAdapter",
+    "FlutterwaveAdapter",
+    "PaymentProvider",
 ]

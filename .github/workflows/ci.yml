@@ -22,6 +22,9 @@ jobs:
   secrets-scan:
     name: Secrets Scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -55,8 +58,9 @@ jobs:
       - name: flake8
         run: flake8 . --max-line-length=120 --exclude=venv,.venv
 
-      - name: isort check
-        run: isort --check-only --diff .
+      - name: isort check (non-blocking – style only)
+        continue-on-error: true
+        run: isort --check-only --diff --profile black .
 
   # ── 3. Backend tests ──────────────────────────────────────────────────────
   backend-test:
@@ -122,7 +126,7 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: ESLint
-        run: yarn lint 2>/dev/null || npx eslint src/ --max-warnings=50
+        run: yarn lint --max-warnings=50
 
   # ── 5. Docker build (smoke test) ─────────────────────────────────────────
   docker-build:

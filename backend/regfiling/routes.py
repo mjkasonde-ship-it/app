@@ -354,7 +354,7 @@ async def generate_payment_order(
         account_number=bank_details.get("account_number") if bank_details else None,
         branch_code=bank_details.get("branch_code") if bank_details else None,
         swift_code=bank_details.get("swift_code") if bank_details else None,
-        payment_reference=f"COVE-{filing.id[:8].upper()}-{datetime.utcnow().strftime("%Y%m%d")}"
+        payment_reference=f"COVE-{filing.id[:8].upper()}-{datetime.utcnow().strftime('%Y%m%d')}"
     )
     po_doc = po.model_dump()
     po_doc["due_date"] = po.due_date.isoformat()
@@ -433,7 +433,7 @@ async def execute_payment(
             {"company_id": po.company_id},
             {"$set": {"available_balance": new_balance, "updated_at": datetime.utcnow().isoformat()}}
         )
-        wtx_id = f"wtx_{datetime.utcnow().strftime("%Y%m%d%H%M%S")}"
+        wtx_id = f"wtx_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
         now_str = datetime.utcnow().isoformat()
         await db.payment_orders.update_one(
             {"id": po.id},
