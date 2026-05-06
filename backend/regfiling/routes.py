@@ -3,7 +3,8 @@ CoveRegFiling - API Routes
 Reminders, form prep, fee calc, PO gen, wallet payment
 """
 
-from fastapi import APIRouter, HTTPException, Request, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Request, BackgroundTasks, Depends
+from auth import get_current_user, require_min_role
 from typing import Optional, List
 from datetime import datetime, date, timedelta
 import logging
@@ -21,10 +22,29 @@ logger = logging.getLogger(__name__)
 
 regfiling_router = APIRouter(prefix="/regfiling", tags=["Regulatory Filing"])
 
-# In-memory storage (replace with MongoDB in production)
-filings_db = {}
-payment_orders_db = {}
-audit_log_db = []
+# ---------------------------------------------------------------------------
+# NOTE: This module has been partially migrated to MongoDB.
+# The get_db() / set_db() pattern is wired in. Route functions that still
+# reference local variables (filings, orders etc.) need to be converted to
+# async and use await get_db().<collection> calls. See TODO markers below.
+# ---------------------------------------------------------------------------
+filings_db: dict = {}        # TODO: remove once all routes are fully migrated
+payment_orders_db: dict = {} # TODO: remove once all routes are fully migrated
+audit_log_db: list = []      # TODO: remove once all routes are fully migrated
+
+# ---------------------------------------------------------------------------
+# Database dependency – injected at startup from server.py
+# ---------------------------------------------------------------------------
+_db = None
+
+def set_db(database) -> None:
+    global _db
+    _db = database
+
+def get_db():
+    if _db is None:
+        raise RuntimeError("RegFiling DB not initialised. Call set_db() at startup.")
+    return _db
 
 
 def get_priority_score(filing: RegFiling) -> int:
@@ -647,7 +667,7 @@ async def get_audit_trail(
 # SEED TEST DATA
 # =========================
 
-@regfiling_router.post("/seed-test-data/{company_id}")
+@regfiling_router.post("/seed-test-data/{company_id}", include_in_schema=False)
 async def seed_test_filings(company_id: str):
     """Seed test filing data for demo"""
     test_filings = [
