@@ -59,7 +59,7 @@ jobs:
         run: flake8 . --max-line-length=120 --exclude=venv,.venv
 
       - name: isort check
-        run: isort --check-only --diff .
+        run: isort --check-only --diff --profile black .
 
   # ── 3. Backend tests ──────────────────────────────────────────────────────
   backend-test:
