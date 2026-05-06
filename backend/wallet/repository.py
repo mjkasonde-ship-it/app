@@ -147,7 +147,6 @@ class SubAccountRepository:
         monthly_payout_delta: float = 0.0,
     ) -> Optional[SubAccount]:
         """Atomic balance update using $inc – avoids read-modify-write races."""
-        inc: dict = {"updated_at": datetime.utcnow()}
         updates: dict = {}
         if available_delta:
             updates["available_balance"] = available_delta
