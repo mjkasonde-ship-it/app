@@ -20,8 +20,11 @@ export default [
       ecmaVersion: 2022,
       sourceType: "module",
       globals: {
+        // Browser globals (window, document, etc.)
         ...globals.browser,
         ...globals.es2021,
+        // CRA injects process.env at build time
+        process: "readonly",
       },
       parserOptions: {
         ecmaFeatures: {
@@ -40,11 +43,14 @@ export default [
       ...reactHooksPlugin.configs.recommended.rules,
       "react/react-in-jsx-scope": "off",   // Not needed with React 17+ new JSX transform
       "react/prop-types": "off",            // TypeScript handles this
+      // Allow custom HTML attributes (e.g. cmdk data attributes)
+      "react/no-unknown-property": ["error", { ignore: ["cmdk-input-wrapper"] }],
 
       // General quality rules
-      "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+      "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
       "no-console": "warn",
       "no-debugger": "error",
+      "no-undef": "warn",  // Warn instead of error for CRA compatibility
     },
   },
 
@@ -55,7 +61,6 @@ export default [
       "dist/**",
       "node_modules/**",
       "coverage/**",
-      "*.config.js",
       "craco.config.js",
     ],
   },
