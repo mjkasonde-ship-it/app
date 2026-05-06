@@ -433,7 +433,7 @@ async def execute_payment(
             {"company_id": po.company_id},
             {"$set": {"available_balance": new_balance, "updated_at": datetime.utcnow().isoformat()}}
         )
-        wtx_id = f"wtx_{datetime.utcnow().strftime("%Y%m%d%H%M%S")}"
+        wtx_id = f"wtx_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
         now_str = datetime.utcnow().isoformat()
         await db.payment_orders.update_one(
             {"id": po.id},
