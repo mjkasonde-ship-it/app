@@ -354,7 +354,7 @@ async def generate_payment_order(
         account_number=bank_details.get("account_number") if bank_details else None,
         branch_code=bank_details.get("branch_code") if bank_details else None,
         swift_code=bank_details.get("swift_code") if bank_details else None,
-        payment_reference=f"COVE-{filing.id[:8].upper()}-{datetime.utcnow().strftime("%Y%m%d")}"
+        payment_reference=f"COVE-{filing.id[:8].upper()}-{datetime.utcnow().strftime('%Y%m%d')}"
     )
     po_doc = po.model_dump()
     po_doc["due_date"] = po.due_date.isoformat()
