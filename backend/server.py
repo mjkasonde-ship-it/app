@@ -10,6 +10,14 @@ from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime, timezone, timedelta
 from emergentintegrations.llm.chat import LlmChat, UserMessage
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from contextlib import asynccontextmanager
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.starlette import StarletteIntegration
+from auth import auth_router, set_db as auth_set_db, get_current_user, require_role, require_min_role
 
 # Import wallet module
 from wallet import wallet_router
@@ -25,7 +33,56 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # Create the main app without a prefix
-app = FastAPI(title="Cove Legal Tech API")
+# ---------------------------------------------------------------------------
+# Sentry (error tracking) – set SENTRY_DSN in env to enable
+# ---------------------------------------------------------------------------
+sentry_dsn = os.environ.get("SENTRY_DSN", "")
+if sentry_dsn:
+    sentry_sdk.init(
+        dsn=sentry_dsn,
+        integrations=[StarletteIntegration(), FastApiIntegration()],
+        traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0.1")),
+        send_default_pii=False,
+    )
+
+# ---------------------------------------------------------------------------
+# Rate limiter
+# ---------------------------------------------------------------------------
+limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
+
+# ---------------------------------------------------------------------------
+# DB Indexes (run at startup)
+# ---------------------------------------------------------------------------
+async def create_indexes() -> None:
+    """Create MongoDB indexes for performance."""
+    await db.companies.create_index("id", unique=True, background=True)
+    await db.users.create_index("id", unique=True, background=True)
+    await db.users.create_index("email", unique=True, background=True)
+    await db.obligations.create_index("company_id", background=True)
+    await db.obligations.create_index("due_date", background=True)
+    await db.obligations.create_index([("company_id", 1), ("status", 1)], background=True)
+    await db.audit_logs.create_index("entity_id", background=True)
+    await db.audit_logs.create_index("timestamp", background=True)
+    await db.activity_notifications.create_index("company_id", background=True)
+    logger.info("MongoDB indexes created")
+
+# ---------------------------------------------------------------------------
+# Lifespan (replaces deprecated @app.on_event)
+# ---------------------------------------------------------------------------
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    auth_set_db(db)  # give auth module a reference to the DB
+    await create_indexes()
+    logger.info("Cove API started")
+    yield
+    # Shutdown
+    client.close()
+    logger.info("Cove API shut down")
+
+app = FastAPI(title="Cove Legal Tech API", lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
@@ -2186,6 +2243,7 @@ async def websocket_notifications(websocket: WebSocket, company_id: str):
 # Include the router in the main app
 # Include main API router
 app.include_router(api_router)
+app.include_router(auth_router, prefix="/api")
 
 # Include wallet router under /api prefix
 app.include_router(wallet_router, prefix="/api")
@@ -2193,14 +2251,14 @@ app.include_router(wallet_router, prefix="/api")
 # Include regulatory filing router under /api prefix
 app.include_router(regfiling_router, prefix="/api")
 
+# CORS – never allow wildcard with credentials in production
+_cors_origins = [o.strip() for o in os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_cors_origins,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+# Shutdown handled by lifespan context manager above
