@@ -1,14 +1,21 @@
 name: CD – Deploy to Production
 
+# HOW TO DEPLOY:
+#   Staging deploys automatically on every push to main.
+#   Production NEVER deploys automatically.
+#   To deploy to production, go to:
+#     Actions → "CD – Deploy to Production" → "Run workflow" → select "production"
+#   This is the free-plan alternative to GitHub Environment protection rules.
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Target environment'
+        description: "Target environment (staging or production)"
         required: true
-        default: 'production'
+        default: production
         type: choice
         options:
           - production
@@ -16,23 +23,23 @@ on:
 
 concurrency:
   group: deploy-${{ github.ref }}
-  cancel-in-progress: false   # never cancel an in-flight deploy
+  cancel-in-progress: false
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # ── 1. Run the full test suite before any deployment ──────────────────────
+  # ── 1. Run the full test suite before any deployment ─────────────────────────
   test:
     name: Run tests
     runs-on: ubuntu-latest
     services:
       mongodb:
         image: mongo:7
-        ports: ['27017:27017']
+        ports: ["27017:27017"]
         options: >-
-          --health-cmd "mongosh --eval 'db.adminCommand("ping")'"
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -42,7 +49,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
           cache: pip
 
       - name: Install dependencies
@@ -55,7 +62,7 @@ jobs:
           ENVIRONMENT: test
         run: pytest tests/ -v --tb=short
 
-  # ── 2. Build & push Docker images ─────────────────────────────────────────
+  # ── 2. Build & push Docker images ────────────────────────────────────────────
   build:
     name: Build images
     needs: test
@@ -127,7 +134,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # ── 3. Deploy to Staging ───────────────────────────────────────────────────
+  # ── 3. Deploy to Staging (auto on push to main) ─────────────────────────
   deploy-staging:
     name: Deploy – Staging
     needs: build
@@ -158,7 +165,7 @@ jobs:
           sleep 15
           curl --fail --max-time 10 https://staging.cove.zm/health || exit 1
 
-  # ── 4. Smoke tests against Staging ────────────────────────────────────────
+  # ── 4. Smoke tests against Staging ────────────────────────────────────────────
   smoke-staging:
     name: Smoke tests – Staging
     needs: deploy-staging
@@ -169,7 +176,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
           cache: pip
 
       - name: Install test deps
@@ -182,10 +189,13 @@ jobs:
           SMOKE_PASS: ${{ secrets.SMOKE_PASS }}
         run: pytest tests/smoke/ -v --tb=short -m smoke
 
-  # ── 5. Deploy to Production (manual gate) ─────────────────────────────────
+  # ── 5. Deploy to Production (MANUAL ONLY via workflow_dispatch) ───────────────
+  # To trigger: Actions → CD – Deploy to Production → Run workflow → select "production"
+  # This job is SKIPPED on automatic pushes to main.
   deploy-production:
     name: Deploy – Production
     needs: [build, smoke-staging]
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
     runs-on: ubuntu-latest
     environment:
       name: production
@@ -216,7 +226,7 @@ jobs:
   # ── 6. Notify on failure ───────────────────────────────────────────────────
   notify-failure:
     name: Notify on failure
-    needs: [test, build, deploy-staging, smoke-staging, deploy-production]
+    needs: [test, build, deploy-staging, smoke-staging]
     if: failure()
     runs-on: ubuntu-latest
     steps:
