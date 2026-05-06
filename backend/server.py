@@ -21,7 +21,7 @@ from sentry_sdk.integrations.starlette import StarletteIntegration
 from auth import auth_router, set_db as auth_set_db, get_current_user, require_role, require_min_role
 
 # Import wallet module
-from wallet import wallet_router
+from wallet import wallet_router, ensure_wallet_indexes
 from regfiling import regfiling_router
 from ws import manager as ws_manager
 
@@ -74,7 +74,9 @@ async def create_indexes() -> None:
 async def lifespan(app: FastAPI):
     # Startup
     auth_set_db(db)  # give auth module a reference to the DB
+    app.state.db = db  # expose db to request handlers via request.app.state.db
     await create_indexes()
+    await ensure_wallet_indexes(db)
     logger.info("Cove API started")
     yield
     # Shutdown
