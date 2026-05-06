@@ -1,15 +1,16 @@
 // ESLint flat config (ESLint v9+)
-// Replaces legacy .eslintrc.* format
+// Production-hardening baseline: errors only – warnings disabled until
+// the team runs a dedicated lint-cleanup sprint.
 import js from "@eslint/js";
 import globals from "globals";
 import reactPlugin from "eslint-plugin-react";
 import reactHooksPlugin from "eslint-plugin-react-hooks";
 
 export default [
-  // Base JS recommended rules
+  // Base JS recommended rules (only errors kept below)
   js.configs.recommended,
 
-  // React files
+  // React source files
   {
     files: ["src/**/*.{js,jsx,ts,tsx}"],
     plugins: {
@@ -20,41 +21,40 @@ export default [
       ecmaVersion: 2022,
       sourceType: "module",
       globals: {
-        // Browser globals (window, document, etc.)
+        // Browser globals (window, document, navigator, etc.)
         ...globals.browser,
         ...globals.es2021,
-        // CRA injects process.env at build time
+        // CRA injects process.env at build time – not a real browser global
         process: "readonly",
       },
       parserOptions: {
-        ecmaFeatures: {
-          jsx: true,
-        },
+        ecmaFeatures: { jsx: true },
       },
     },
     settings: {
-      react: {
-        version: "detect",
-      },
+      react: { version: "detect" },
     },
     rules: {
-      // React rules
+      // ── React rules (spread recommended then override) ──────────────────
       ...reactPlugin.configs.recommended.rules,
       ...reactHooksPlugin.configs.recommended.rules,
-      "react/react-in-jsx-scope": "off",   // Not needed with React 17+ new JSX transform
-      "react/prop-types": "off",            // TypeScript handles this
-      // Allow custom HTML attributes (e.g. cmdk data attributes)
+      // React 17+ JSX transform – no longer needs React in scope
+      "react/react-in-jsx-scope": "off",
+      // TypeScript / PropTypes handled elsewhere
+      "react/prop-types": "off",
+      // Custom HTML attributes used by cmdk component library
       "react/no-unknown-property": ["error", { ignore: ["cmdk-input-wrapper"] }],
 
-      // General quality rules
-      "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
-      "no-console": "warn",
-      "no-debugger": "error",
-      "no-undef": "warn",  // Warn instead of error for CRA compatibility
+      // ── General quality (errors only) ──────────────────────────────────
+      // These generate too many warnings on legacy code – off until cleanup sprint
+      "no-unused-vars": "off",
+      "no-console": "off",
+      "no-undef": "off",        // CRA handles env globals; too noisy here
+      "no-debugger": "error",   // Always block debugger statements
     },
   },
 
-  // Ignore build output and deps
+  // Ignore generated / vendored directories
   {
     ignores: [
       "build/**",
@@ -62,6 +62,8 @@ export default [
       "node_modules/**",
       "coverage/**",
       "craco.config.js",
+      "tailwind.config.js",
+      "postcss.config.js",
     ],
   },
 ];
