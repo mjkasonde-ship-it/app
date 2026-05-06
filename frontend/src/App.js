@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import ErrorBoundary from "./components/ErrorBoundary";
 import "@/App.css";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
@@ -506,7 +507,8 @@ const LandingPage = () => {
 
 function App() {
   return (
-    <div className="App">
+    <ErrorBoundary>
+      <div className="App">
       <Toaster position="top-right" richColors />
       <BrowserRouter>
         <Routes>
@@ -534,6 +536,7 @@ function App() {
         </Routes>
       </BrowserRouter>
     </div>
+    </ErrorBoundary>
   );
 }
 
