@@ -1,0 +1,23 @@
+# Copy this file to terraform.tfvars and fill in real values
+# NEVER commit terraform.tfvars to version control
+
+aws_region = "af-south-1"
+environment = "production"
+domain_name = "app.cove.zm"
+
+# DocumentDB credentials
+# Generate strong password: python -c "import secrets; print(secrets.token_urlsafe(32))"
+docdb_password = "REPLACE_WITH_STRONG_PASSWORD"
+docdb_instance_class = "db.r5.large"
+
+# ECS configuration
+backend_cpu = 2048
+backend_memory = 4096
+backend_desired_count = 2
+
+# Additional tags
+tags = {
+  Owner = "mjkasonde"
+  Project = "cove-legal-tech"
+  CostCenter = "engineering"
+}

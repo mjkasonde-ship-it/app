@@ -1,57 +1,60 @@
 # ---------------------------------------------------------------------------
-# Cove Legal Tech – Backend Dockerfile
-# Multi-stage: builder (installs deps) → runtime (slim, non-root)
+# Cove Legal Tech – Production Backend Dockerfile
+# Multi-stage build for minimal attack surface
 # ---------------------------------------------------------------------------
 
-# ── Stage 1: dependency builder ───────────────────────────────────────────
+# ── Stage 1: Builder ─────────────────────────────────────────────────────────
 FROM python:3.11-slim AS builder
 
 WORKDIR /build
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libmagic1 \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends     gcc     libpq-dev     && rm -rf /var/lib/apt/lists/*
 
-# Copy only requirements first for layer caching
+# Copy requirements
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# ── Stage 2: runtime image ────────────────────────────────────────────────
-FROM python:3.11-slim AS runtime
+# Create virtual environment and install dependencies
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN pip install --no-cache-dir --upgrade pip &&     pip install --no-cache-dir -r requirements.txt
 
-# Install runtime system deps only
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libmagic1 \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+# ── Stage 2: Production ────────────────────────────────────────────────────
+FROM python:3.11-slim AS production
 
-# Create non-root user
-RUN groupadd --gid 1001 appgroup \
-    && useradd --uid 1001 --gid appgroup --shell /bin/sh --create-home appuser
+# Security: Create non-root user
+RUN groupadd -r cove && useradd -r -g cove -s /bin/false cove
 
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends     libpq5     curl     && rm -rf /var/lib/apt/lists/*     && apt-get clean
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Set working directory
 WORKDIR /app
 
-# Copy installed Python packages from builder
-COPY --from=builder /install /usr/local
+# Copy application code
+COPY app/ ./app/
 
-# Copy application source
-COPY --chown=appuser:appgroup . .
-
-# Remove the spurious =2.0.0 artefact file if it exists
-RUN rm -f /app/=2.0.0
+# Security: Set proper ownership
+RUN chown -R cove:cove /app
 
 # Switch to non-root user
-USER appuser
+USER cove
+
+# Environment
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONFAULTHANDLER=1
+ENV ENVIRONMENT=production
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3     CMD curl -f http://localhost:8001/api/v1/health || exit 1
 
 # Expose port
 EXPOSE 8001
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
-    CMD curl -f http://localhost:8001/api/health || exit 1
-
-# Start server
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "2"]
+# Run application
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001",      "--workers", "4", "--proxy-headers", "--forwarded-allow-ips", "*"]
